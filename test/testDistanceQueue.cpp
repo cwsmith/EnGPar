@@ -75,9 +75,6 @@ int main(int argc, char* argv[]) {
 
   try
   {
-    uint64_t startTime, endTime;
-    util::Timer timer;
-
     parseArguments(argc, argv);
 
     // Get list of devices
@@ -85,8 +82,7 @@ int main(int argc, char* argv[]) {
     getDeviceList(devices);
 
     // Check device index in range
-    if (deviceIndex >= devices.size())
-    {
+    if (deviceIndex >= devices.size()) {
       std::cout << "Invalid device index (try '--list')" << std::endl;
       return 1;
     }
