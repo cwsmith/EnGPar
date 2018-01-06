@@ -40,8 +40,12 @@ set(VALGRIND_ARGS "" CACHE string
 
 set(SCOREC_PREFIX "" CACHE STRING "Directory where SCOREC is installed")
 
-option(ENABLE_PUMI "Build with PUMI interface" OFF)
+option(ENABLE_OPENCL "Build with OpenCL support" OFF)
+if (ENABLE_OPENCL)
+  find_package(OpenCL REQUIRED)
+endif()
 
+option(ENABLE_PUMI "Build with PUMI interface" OFF)
 if (ENABLE_PUMI)
   find_package(SCOREC 2.1.0 REQUIRED CONFIG PATHS ${SCOREC_PREFIX} NO_DEFAULT_PATH)
 else()

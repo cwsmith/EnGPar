@@ -11,6 +11,9 @@ include_directories(
   ${PARMETIS_INCLUDE_DIRS}
   ${KOKKOS_INCLUDE_DIRS}
   )
+if( OpenCL_FOUND )
+  include_directories(${CMAKE_HOME_DIRECTORY}/opencl)
+endif()
 
 if(ENGPAR_FORTRAN_INTERFACE)
   set(ALL_LIBS engpar_ftn)
@@ -42,6 +45,9 @@ set(ALL_LIBS ${ALL_LIBS}
 function(make_exe exename srcname)
   add_executable(${exename} ${srcname} buildGraphs.cpp)
   target_link_libraries(${exename} ${ALL_LIBS})
+  if( OpenCL_FOUND )
+    target_link_libraries(${exename} OpenCL::OpenCL)
+  endif()
 endfunction(make_exe)
 
 make_exe(constructGraph constructGraph.cpp)
