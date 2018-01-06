@@ -11,6 +11,8 @@
 #include "err_code.h"
 #include "device_picker.hpp"
 
+static cl_uint  deviceIndex   =      0;
+
 void parseArguments(int argc, char *argv[])
 {
   for (int i = 1; i < argc; i++)
