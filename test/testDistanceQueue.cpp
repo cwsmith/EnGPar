@@ -12,6 +12,9 @@
 #include "device_picker.hpp"
 
 static cl_uint  deviceIndex   =      0;
+cl::Context* engpar_ocl_context;
+cl::CommandQueue* engpar_ocl_queue;
+cl::Device* engpar_ocl_device;
 
 void parseArguments(int argc, char *argv[])
 {
@@ -51,7 +54,7 @@ void parseArguments(int argc, char *argv[])
     else if (!strcmp(argv[i], "--help") || !strcmp(argv[i], "-h"))
     {
       std::cout << std::endl;
-      std::cout << "Usage: ./nbody [OPTIONS]" << std::endl << std::endl;
+      std::cout << "Usage: " << argv[0] << " [OPTIONS]" << std::endl << std::endl;
       std::cout << "Options:" << std::endl;
       std::cout << "  -h  --help               Print the message" << std::endl;
       std::cout << "      --list               List available devices" << std::endl;
@@ -87,28 +90,14 @@ int main(int argc, char* argv[]) {
       return 1;
     }
 
-    cl::Device device = devices[deviceIndex];
+    engpar_ocl_device = new cl::Device(devices[deviceIndex]);
 
-    std::string name = getDeviceName(device);
+    std::string name = getDeviceName(*engpar_ocl_device);
     std::cout << std::endl << "Using OpenCL device: " << name << std::endl;
 
-    cl::Context context(device);
-    cl::CommandQueue queue(context);
+    engpar_ocl_context = new cl::Context(*engpar_ocl_device);
+    engpar_ocl_queue = new cl::CommandQueue(*engpar_ocl_context);
 
-    cl::Program program(context, util::loadProgram("bfskernel.cl"));
-    try
-    {
-      program.build();
-    }
-    catch (cl::Error error)
-    {
-      if (error.err() == CL_BUILD_PROGRAM_FAILURE)
-      {
-        std::string log = program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device);
-        std::cerr << log << std::endl;
-      }
-      throw(error);
-    }
   }
   catch (cl::Error err)
   {
@@ -149,6 +138,10 @@ int main(int argc, char* argv[]) {
   PCU_Barrier();
   if (!PCU_Comm_Self()) 
     printf("All Tests Passed\n"); 
+
+  delete engpar_ocl_device;
+  delete engpar_ocl_context;
+  delete engpar_ocl_queue;
 
   EnGPar_Finalize();
   MPI_Finalize();
