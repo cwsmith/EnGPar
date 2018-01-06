@@ -37,6 +37,28 @@ namespace engpar {
       }
       throw(error);
     }
+
+    cl::make_kernel<cl::Buffer> bfsPullKernel(program, "bfsPull");
+
+    const int buffsize = 128;
+    // device buffer
+    cl::Buffer d_verts = cl::Buffer(*engpar_ocl_context,
+                                    CL_MEM_READ_WRITE,
+                                    buffsize*sizeof(int));
+
+    int* h_verts = (int*) malloc(buffsize*sizeof(int));
+    for(int i=0; i<buffsize; i++)
+      h_verts[i] = i;
+
+    cl::copy(queue, h_verts, h_verts+buffsize, d_verts);
+
+    std::cout << "OpenCL initialization complete." << std::endl << std::endl;
+    cl::NDRange global(64);
+    std::cout << "OpenCL kernel queued" << std::endl << std::endl;
+    bfsPullKernel(cl::EnqueueArgs(*engpar_ocl_queue, global),d_verts);
+    std::cout << "OpenCL start copying device buffere to host" << std::endl << std::endl;
+    cl::copy(*engpar_ocl_queue, d_verts, h_verts, h_verts+buffsize);
+    std::cout << "OpenCL done copying device buffere to host" << std::endl << std::endl;
   }
 
 }
