@@ -13,6 +13,15 @@ set(ENGPAR_HEADERS
   engpar.h
   )
 
+if(OpenCL_FOUND)
+  include_directories(${CMAKE_HOME_DIRECTORY}/opencl)
+  message(STATUS "CMAKE_BINARY_DIR is ${CMAKE_BINARY_DIR}")
+  include_directories(${CMAKE_BINARY_DIR}/opencl) # opencl config header
+  set(ENGPAR_SOURCES
+    ${ENGPAR_SOURCES}
+    src/engpar_opencl_bfs.cpp)
+endif()
+
 add_library(diffusive ${ENGPAR_SOURCES})
 
 target_include_directories(diffusive PUBLIC
