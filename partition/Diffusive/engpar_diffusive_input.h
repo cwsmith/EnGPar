@@ -62,11 +62,24 @@ namespace engpar {
      */
     bool useDistanceQueue;
 
-    /** \brief Whether to use the push bfs or pull bfs.
+    /** \brief use the push bfs
      *
      * defaults to false
      */
     bool bfsPush;
+
+    /** \brief use the pull bfs
+     *
+     * defaults to true
+     */
+    bool bfsPull;
+
+    /** \brief use the pull bfs written in OpenCL
+     *
+     * defaults to false
+     */
+    bool bfsPullOpenCL;
+
   };
 }
 
