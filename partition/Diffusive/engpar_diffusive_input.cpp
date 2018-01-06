@@ -12,7 +12,9 @@ namespace engpar {
       useDistanceQueue = true;
     else
       useDistanceQueue = false;
-    bfsPush = true;
+    bfsPush = false;
+    bfsPull = true;
+    bfsPullOpenCL = true;
   }
 
   void DiffusiveInput::addPriority(int type, double tolerance) {

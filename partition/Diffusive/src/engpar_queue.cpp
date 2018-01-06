@@ -1,6 +1,11 @@
 #include "engpar_queue.h"
+#include "engpar_queue_inputs.h"
+#include "engpar_bfsvisitfn.h"
 #include <PCU.h>
 #include "engpar_opencl_config.h"
+#ifdef ENGPAR_OPENCL_ENABLED
+  #include "engpar_opencl_bfs.h"
+#endif
 
 namespace engpar {
   Queue* createIterationQueue(agi::Ngraph* g) {
@@ -49,43 +54,6 @@ namespace engpar {
     if (i < right)
       bfsSort(arr, i, right,values);
   }
-
-  class Inputs {
-  public:
-    Inputs() {
-      seeds=NULL;
-      numSeeds=0;
-      visited=NULL;
-      num_osets=0;
-      num_sets=0;
-      parents=NULL;
-      set_size=NULL;
-      labels=NULL;
-    }
-    ~Inputs() {
-      if (seeds)
-        delete [] seeds;
-      if (visited)
-        delete [] visited;
-      if (parents) 
-        delete [] parents;
-      if (set_size)
-        delete [] set_size;
-      if (labels)
-        delete [] labels;
-    }
-    agi::lid_t* seeds;
-    agi::lid_t numSeeds;
-    int* visited;
-
-    int num_osets;//= numSeeds-start_seed;
-    int num_sets; //= num_osets;
-    int* parents; //= new int[num_sets];
-    int* set_size;//= new int[num_sets];
-    int* labels;  //= new int[pg->num_local_edges[t]];
-  };
-  //Visit function takes in the input, the source edge and destination edge
-  typedef bool (*visitFn)(Inputs*,agi::lid_t,agi::lid_t);
 
   //Visit function for first traversal
   bool depth_visit(Inputs* i,agi::lid_t source,agi::lid_t dest) {
@@ -273,10 +241,22 @@ namespace engpar {
       in1->visited[i] = -1;
     }
     //Run first BFS using depth visit operation
+    //need to check that exactly one of these is set... or use a better
+    // mechanism
     if (input->bfsPush)
       bfs_push(g,t,0,0,depth_visit,in1);
-    else
+    else if (input->bfsPull)
       bfs_pull(g,t,0,0,depth_visit,in1);
+#ifdef ENGPAR_OPENCL_ENABLED
+    else if (input->bfsPullOpenCL)
+      bfs_pull_OpenCL(g,t,0,0,depth_visit,in1);
+#endif
+    else {
+      fprintf(stderr, "invalid input configuration,"
+          "set exactly one of bfsPush | bfsPull | bfsPullOpenCl (if enabled)\n");
+      exit(EXIT_FAILURE);
+    }
+      
     //Setup inputs to second BFS traversal
     Inputs* in2 = new Inputs;
     in2->visited = new int[pg->num_local_edges[t]];
