@@ -1,5 +1,6 @@
 #include "engpar_queue.h"
 #include <PCU.h>
+#include "engpar_opencl_config.h"
 
 namespace engpar {
   Queue* createIterationQueue(agi::Ngraph* g) {
