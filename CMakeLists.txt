@@ -43,7 +43,13 @@ set(SCOREC_PREFIX "" CACHE STRING "Directory where SCOREC is installed")
 option(ENABLE_OPENCL "Build with OpenCL support" OFF)
 if (ENABLE_OPENCL)
   find_package(OpenCL REQUIRED)
+  set(ENGPAR_OPENCL_ENABLED)
 endif()
+
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/opencl/engpar_opencl_config.h.in
+    ${CMAKE_CURRENT_BINARY_DIR}/opencl/engpar_opencl_config.h
+    )
 
 option(ENABLE_PUMI "Build with PUMI interface" OFF)
 if (ENABLE_PUMI)
