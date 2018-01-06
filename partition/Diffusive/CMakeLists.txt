@@ -31,4 +31,8 @@ target_include_directories(diffusive PUBLIC
 
 target_link_libraries(diffusive PUBLIC agi)
 
+if(OpenCL_FOUND)
+  target_link_libraries(diffusive OpenCL::OpenCL)
+endif()
+
 engpar_export_lib(diffusive "${ENGPAR_HEADERS}")
