@@ -8,13 +8,12 @@
 #define __CL_ENABLE_EXCEPTIONS
 #include <CL/cl.hpp>
 #include "util.hpp"
-#include "err_code.h"
 #include "device_picker.hpp"
 
 static cl_uint  deviceIndex   =      0;
-cl::Context* engpar_ocl_context;
-cl::CommandQueue* engpar_ocl_queue;
-cl::Device* engpar_ocl_device;
+extern cl::Context* engpar_ocl_context;
+extern cl::CommandQueue* engpar_ocl_queue;
+extern cl::Device* engpar_ocl_device;
 
 void parseArguments(int argc, char *argv[])
 {
