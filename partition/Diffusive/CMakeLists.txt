@@ -26,7 +26,7 @@ if(OpenCL_FOUND)
   set(kernelDest test/${kernel})
   add_custom_command(
     OUTPUT ${CMAKE_BINARY_DIR}/${kernelDest}
-    COMMAND ${CMAKE_COMMAND} -E copy
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
       ${CMAKE_CURRENT_SOURCE_DIR}/${kernelSrc}
       ${CMAKE_BINARY_DIR}/${kernelDest}
     MAIN_DEPENDENCY ${CMAKE_CURRENT_SOURCE_DIR}/${kernelSrc})
