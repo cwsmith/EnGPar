@@ -5,11 +5,10 @@
 #define __CL_ENABLE_EXCEPTIONS
 #include <CL/cl.hpp>
 #include "util.hpp"
-#include "err_code.h"
 
-extern cl::Context* engpar_ocl_context;
-extern cl::CommandQueue* engpar_ocl_queue;
-extern cl::Device* engpar_ocl_device;
+cl::Context* engpar_ocl_context;
+cl::CommandQueue* engpar_ocl_queue;
+cl::Device* engpar_ocl_device;
 
 namespace engpar {
   /*
@@ -50,7 +49,7 @@ namespace engpar {
     for(int i=0; i<buffsize; i++)
       h_verts[i] = i;
 
-    cl::copy(queue, h_verts, h_verts+buffsize, d_verts);
+    cl::copy(*engpar_ocl_queue, h_verts, h_verts+buffsize, d_verts);
 
     std::cout << "OpenCL initialization complete." << std::endl << std::endl;
     cl::NDRange global(64);
