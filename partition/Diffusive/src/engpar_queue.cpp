@@ -218,11 +218,14 @@ namespace engpar {
       bfs_push(g,t,0,0,depth_visit,in1);
     else if (input->bfsPull)
       bfs_pull(g,t,0,0,depth_visit,in1);
+    else if (input->bfsPullOpenCL) {
 #ifdef ENGPAR_OPENCL_ENABLED
-    else if (input->bfsPullOpenCL)
       bfs_pull_OpenCL(g,t,0,0,depth_visit,in1);
+#else 
+      fprintf(stderr, "bfsPullOpenCL requested, but OpenCL is not enabled!"
+                      "Rerun CMake with \'ENABLE_OPENCL=ON\'.\n");
 #endif
-    else {
+    } else {
       fprintf(stderr, "invalid input configuration,"
           "set exactly one of bfsPush | bfsPull | bfsPullOpenCl (if enabled)\n");
       exit(EXIT_FAILURE);
