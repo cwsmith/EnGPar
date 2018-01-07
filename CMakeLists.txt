@@ -43,7 +43,7 @@ set(SCOREC_PREFIX "" CACHE STRING "Directory where SCOREC is installed")
 option(ENABLE_OPENCL "Build with OpenCL support" OFF)
 if (ENABLE_OPENCL)
   find_package(OpenCL REQUIRED)
-  set(ENGPAR_OPENCL_ENABLED)
+  set(ENGPAR_OPENCL_ENABLED 1)
 endif()
 
 configure_file(
