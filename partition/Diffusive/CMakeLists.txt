@@ -20,6 +20,16 @@ if(OpenCL_FOUND)
   set(ENGPAR_SOURCES
     ${ENGPAR_SOURCES}
     src/engpar_opencl_bfs.cpp)
+  file(COPY "src/bfskernel.cl" DESTINATION "${CMAKE_BINARY_DIR}/test")
+  set(kernel bfskernel.cl)
+  set(kernelSrc src/${kernel})
+  set(kernelDest test/${kernel})
+  add_custom_command(
+    OUTPUT ${CMAKE_BINARY_DIR}/${kernelDest}
+    COMMAND ${CMAKE_COMMAND} -E copy
+      ${CMAKE_CURRENT_SOURCE_DIR}/${kernelSrc}
+      ${CMAKE_BINARY_DIR}/${kernelDest}
+    MAIN_DEPENDENCY ${CMAKE_CURRENT_SOURCE_DIR}/${kernelSrc})
 endif()
 
 add_library(diffusive ${ENGPAR_SOURCES})
