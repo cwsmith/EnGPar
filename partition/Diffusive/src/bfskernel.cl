@@ -1,4 +1,4 @@
-kernel void bfskernel(global int *verts)
+kernel void bfskernel(global int* verts, global int* degreeList)
 {
   uint i       = get_global_id(0);
   uint lid     = get_local_id(0);
