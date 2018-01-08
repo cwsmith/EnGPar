@@ -60,6 +60,8 @@ namespace engpar {
     std::cout << "OpenCL start copying device buffere to host" << std::endl << std::endl;
     cl::copy(*engpar_ocl_queue, d_verts, h_verts, h_verts+buffsize);
     std::cout << "OpenCL done copying device buffere to host" << std::endl << std::endl;
+    for(int i=0; i<buffsize; i++)
+      assert(h_verts[i] = i+1);
   }
 
 }
