@@ -22,6 +22,7 @@ namespace engpar {
   */
   int bfs_pull_OpenCL(agi::Ngraph* g, agi::etype t,agi::lid_t start_seed,
                int start_depth, visitFn visit, Inputs* in) {
+    std::cout << "OpenCL creating program." << std::endl << std::endl;
     cl::Program program(*engpar_ocl_context, util::loadProgram("bfskernel.cl"));
     try
     {
@@ -37,7 +38,8 @@ namespace engpar {
       throw(error);
     }
 
-    cl::make_kernel<cl::Buffer> bfsPullKernel(program, "bfsPull");
+    std::cout << "OpenCL calling make_kernel." << std::endl << std::endl;
+    cl::make_kernel<cl::Buffer> bfsPullKernel(program, "bfskernel");
 
     const int buffsize = 128;
     // device buffer
