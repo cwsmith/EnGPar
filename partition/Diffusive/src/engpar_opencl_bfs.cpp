@@ -48,49 +48,47 @@ namespace engpar {
     }
 
     std::cout << "OpenCL calling make_kernel." << std::endl << std::endl;
-    cl::make_kernel<cl::Buffer, cl::Buffer> bfsPullKernel(program, "bfskernel");
-
-    // device buffer test
-    const int buffsize = 128;
-    cl::Buffer d_verts = cl::Buffer(*engpar_ocl_context,
-                                    CL_MEM_READ_WRITE,
-                                    buffsize*sizeof(int));
-    int* h_verts = (int*) malloc(buffsize*sizeof(int));
-    for(int i=0; i<buffsize; i++)
-      h_verts[i] = i;
-    cl::copy(*engpar_ocl_queue, h_verts, h_verts+buffsize, d_verts);
+    cl::make_kernel
+      <cl::Buffer, cl::Buffer, cl::Buffer, cl::Buffer, cl_long, cl_long, cl_long>
+      bfsPullKernel(program, "bfskernel");
 
     ////////
     // copy the graph CSRs to the device
     ////////
     agi::PNgraph* pg = g->publicize();
+    printf("host: numVerts numEdges numPins %ld %ld %ld\n",
+           pg->num_local_verts, pg->num_local_edges[t], pg->num_local_pins[t]);
     // vert-to-nets
     cl::Buffer* d_degreeList = copyToDevice<agi::lid_t>(
         pg->degree_list[t],
         pg->num_local_verts+1,
         CL_MEM_READ_ONLY);
-    //cl::Buffer d_degreeList = cl::Buffer(*engpar_ocl_context,
-    //                                CL_MEM_READ,
-    //                                (pg->num_local_verts[t]+1)*sizeof(int));
-
-    //cl::Buffer d_edgeList = cl::Buffer(*engpar_ocl_context,
-    //                                CL_MEM_READ,
-    //                                pg->num_local_edges[t]*sizeof(int));
-
+    cl::Buffer* d_edgeList = copyToDevice<agi::lid_t>(
+        pg->edge_list[t],
+        pg->num_local_edges[t],
+        CL_MEM_READ_ONLY);
     // net-to-verts
-    // COMING SOON
+    cl::Buffer* d_pinDegreeList = copyToDevice<agi::lid_t>(
+        pg->pin_degree_list[t],
+        pg->num_local_edges[t]+1,
+        CL_MEM_READ_ONLY);
+    cl::Buffer* d_pinList = copyToDevice<agi::lid_t>(
+        pg->pin_list[t],
+        pg->num_local_pins[t],
+        CL_MEM_READ_ONLY);
 
     std::cout << "OpenCL initialization complete." << std::endl << std::endl;
-    cl::NDRange global(128);
+    cl::NDRange global(pg->num_local_edges[t]);
+
     std::cout << "OpenCL kernel queued" << std::endl << std::endl;
-    bfsPullKernel(cl::EnqueueArgs(*engpar_ocl_queue, global), d_verts, *d_degreeList);
-    std::cout << "OpenCL start copying device buffere to host" << std::endl << std::endl;
-    cl::copy(*engpar_ocl_queue, d_verts, h_verts, h_verts+buffsize);
-    std::cout << "OpenCL done copying device buffere to host" << std::endl << std::endl;
-    for(int i=0; i<buffsize; i++)
-      assert(h_verts[i] = i+1);
-    delete [] h_verts;
+    bfsPullKernel(cl::EnqueueArgs(*engpar_ocl_queue, global),
+        *d_degreeList, *d_edgeList, *d_pinDegreeList, *d_pinList,
+        pg->num_local_verts, pg->num_local_edges[t], pg->num_local_pins[t]);
+
     delete d_degreeList;
+    delete d_edgeList;
+    delete d_pinDegreeList;
+    delete d_pinList;
   }
 
 }
