@@ -10,74 +10,46 @@
 #include "util.hpp"
 #include "device_picker.hpp"
 
-static cl_uint  deviceIndex   =      0;
 extern cl::Context* engpar_ocl_context;
 extern cl::CommandQueue* engpar_ocl_queue;
 extern cl::Device* engpar_ocl_device;
 
-void parseArguments(int argc, char *argv[])
-{
-  for (int i = 1; i < argc; i++)
-  {
-    if (!strcmp(argv[i], "--list"))
-    {
-      // Get list of devices
-      std::vector<cl::Device> devices;
-      getDeviceList(devices);
-
-      // Print device names
-      if (devices.size() == 0)
-      {
-        std::cout << "No devices found." << std::endl;
-      }
-      else
-      {
-        std::cout << std::endl;
-        std::cout << "Devices:" << std::endl;
-        for (unsigned i = 0; i < devices.size(); i++)
-        {
-          std::cout << i << ": " << getDeviceName(devices[i]) << std::endl;
-        }
-        std::cout << std::endl;
-      }
-      exit(0);
-    }
-    else if (!strcmp(argv[i], "--device"))
-    {
-      if (++i >= argc || !parseUInt(argv[i], &deviceIndex))
-      {
-        std::cout << "Invalid device index" << std::endl;
+void parseDriverArguments(int argc, char *argv[],
+    int* bfsmode, const char* graphFileName) {
+  for (int i = 1; i < argc; i++) {
+    if (!strcmp(argv[i], "--graph")) {
+      if (++i >= argc) {
+        std::cout << "Invalid graph\n";
         exit(1);
       }
-    }
-    else if (!strcmp(argv[i], "--help") || !strcmp(argv[i], "-h"))
-    {
-      std::cout << std::endl;
-      std::cout << "Usage: " << argv[0] << " [OPTIONS]" << std::endl << std::endl;
-      std::cout << "Options:" << std::endl;
-      std::cout << "  -h  --help               Print the message" << std::endl;
-      std::cout << "      --list               List available devices" << std::endl;
-      std::cout << "      --device     INDEX   Select device at INDEX" << std::endl;
-      std::cout << std::endl;
+      graphFileName = argv[i];
+    } else if (!strcmp(argv[i], "--bfsmode")) {
+      if (++i >= argc) {
+        std::cout << "Invalid bfsmode\n";
+        exit(1);
+      }
+      *bfsmode = atoi(argv[i]);
+    } else if (!strcmp(argv[i], "--help") || !strcmp(argv[i], "-h")) {
+      std::cout << "\n";
+      std::cout << "      --bfsmode     [0|1|2]   0:push, 1:pull, 2:pullOpenCL" << std::endl;
+      std::cout << "      --graph       <pathToGraphFile.bgd>" << std::endl;
+      std::cout << "\n";
       exit(0);
-    }
-    else
-    {
-      std::cout << "Unrecognized argument '" << argv[i] << "' (try '--help')"
-                << std::endl;
-      exit(1);
     }
   }
 }
+
 
 
 int main(int argc, char* argv[]) {
   MPI_Init(&argc,&argv);
   EnGPar_Initialize();
 
+  int bfsmode = 0;
   try
   {
-    parseArguments(argc, argv);
+    cl_uint deviceIndex = 0;
+    parseArguments(argc, argv, &deviceIndex);
 
     // Get list of devices
     std::vector<cl::Device> devices;
@@ -110,21 +82,34 @@ int main(int argc, char* argv[]) {
   }
 
   agi::Ngraph* g;
-  if (argc==1)
+  char* graphFileName = NULL;
+  parseDriverArguments(argc,argv,&bfsmode,graphFileName);
+
+  if ( !graphFileName )
     if (PCU_Comm_Peers()==2)
       g = buildDisconnected2Graph();
     else
       g=buildHyperGraphLine();
   else {
     g = agi::createEmptyGraph();
-    g->loadFromFile(argv[1]);
+    g->loadFromFile(graphFileName);
   }
   PCU_Barrier();
 
   engpar::Input* input = engpar::createDiffusiveInput(g,0);
   engpar::DiffusiveInput* inp = static_cast<engpar::DiffusiveInput*>(input);
-  inp->bfsPush = inp->bfsPull = false;
-  inp->bfsPullOpenCL = true;
+
+  inp->bfsPush = inp->bfsPull = inp->bfsPullOpenCL = false;
+  if (bfsmode == 0) //push
+    inp->bfsPush = true;
+  else if (bfsmode == 1)
+    inp->bfsPull = true;
+  else if (bfsmode == 2)
+    inp->bfsPullOpenCL = true;
+  else {
+    printf("invalid bfsmode specified... exiting\n");
+    exit(EXIT_FAILURE);
+  }
   engpar::Queue* q = engpar::createDistanceQueue(inp);
   if (!PCU_Comm_Self()) {
     for (unsigned int i=0;i<q->size();i++)
