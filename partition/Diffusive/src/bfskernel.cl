@@ -30,11 +30,7 @@ int depth_visit(global long* depth, const long source, const long dest) {
 
 kernel void bfskernel(global long* degreeList,
                       global long* edgeList,
-                      global long* pinDegreeList,
-                      global long* pinList,
-                      const long numVerts,
                       const long numEdges,
-                      const long numPins,
                       global int* depth,
                       global int* seeds,
                       const long numSeeds,
@@ -51,8 +47,8 @@ kernel void bfskernel(global long* degreeList,
      globalSize[d] = get_global_size(d);
   }
   if( !i ) {
-    printf("device: numVerts numEdges numPins numSeeds startDepth %ld %ld %ld %ld %d\n",
-           numVerts, numEdges, numPins, numSeeds, startDepth);
+    printf("device: numEdges numSeeds startDepth %ld %ld %d\n",
+           numEdges, numSeeds, startDepth);
     printf("device: localsize globalsize ");
     for(uint d=0; d<dim; d++)
       printf(" <%d> %d %d ", d, localSize[d], globalSize[d]);

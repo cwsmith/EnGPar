@@ -60,11 +60,7 @@ namespace engpar {
     cl::make_kernel
       <cl::Buffer,        //degreeList
        cl::Buffer,        //edgeList
-       cl::Buffer,        //pinDegreeList
-       cl::Buffer,        //pinList
-       cl_long,           //numVerts
        cl_long,           //numEdges
-       cl_long,           //numPins
        cl::Buffer,        //depth
        cl::Buffer,        //seeds
        cl_long,           //numSeeds
@@ -80,9 +76,8 @@ namespace engpar {
     ////////
     // copy the graph CSRs to the device
     ////////
-    printf("host: numVerts numEdges numPins numSeeds startDepth %ld %ld %ld %ld %d\n",
-           pg->num_local_verts, pg->num_local_edges[t], pg->num_local_pins[t],
-           in->numSeeds, start_depth);
+    printf("host: numEdges numSeeds startDepth %ld %ld %d\n",
+           pg->num_local_edges[t], in->numSeeds, start_depth);
     // vert-to-nets
     cl::Buffer* d_degreeList = copyToDevice<agi::lid_t>(
         pg->degree_list[t],
@@ -91,15 +86,6 @@ namespace engpar {
     cl::Buffer* d_edgeList = copyToDevice<agi::lid_t>(
         pg->edge_list[t],
         pg->num_local_edges[t],
-        CL_MEM_READ_ONLY);
-    // net-to-verts
-    cl::Buffer* d_pinDegreeList = copyToDevice<agi::lid_t>(
-        pg->pin_degree_list[t],
-        pg->num_local_edges[t]+1,
-        CL_MEM_READ_ONLY);
-    cl::Buffer* d_pinList = copyToDevice<agi::lid_t>(
-        pg->pin_list[t],
-        pg->num_local_pins[t],
         CL_MEM_READ_ONLY);
     ////////
     // vertex depth array
@@ -119,8 +105,7 @@ namespace engpar {
 
     std::cout << "OpenCL kernel queued" << std::endl << std::endl;
     bfsPullKernel(cl::EnqueueArgs(*engpar_ocl_queue, global),
-        *d_degreeList, *d_edgeList, *d_pinDegreeList, *d_pinList,
-        pg->num_local_verts, pg->num_local_edges[t], pg->num_local_pins[t],
+        *d_degreeList, *d_edgeList, pg->num_local_edges[t],
         *d_depth, *d_seeds, in->numSeeds, start_depth, localWork);
 
     copyFromDevice<int>(d_depth, in->visited, pg->num_local_edges[t]);
@@ -133,8 +118,6 @@ namespace engpar {
 
     delete d_degreeList;
     delete d_edgeList;
-    delete d_pinDegreeList;
-    delete d_pinList;
     delete d_depth;
     delete d_seeds;
     delete program;
