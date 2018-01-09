@@ -1,6 +1,6 @@
 typedef long lid_t;
 
-
+// Matthew Scarpino, "OpenCL in Action", Listing 10.2, 2012
 int reductionSum(int in, local int* partial_sums) {
    int lid = get_local_id(0);
    int group_size = get_local_size(0);
@@ -26,6 +26,25 @@ int depth_visit(global long* depth, const long source, const long dest) {
     } else {
        return 0;
     }
+}
+
+void assignEdges(int globSize, int numEdges, int i, int* first, int* last) {
+  int edgesPerWorkItem = 0;
+  if( numEdges < globSize )
+      edgesPerWorkItem = 1;
+  else
+      edgesPerWorkItem = numEdges/globSize;
+
+  *first = i*edgesPerWorkItem;
+  *last = *first+edgesPerWorkItem;
+  
+  if( *first >= numEdges ) {
+      *first = *last = -1;
+  }
+
+  if( *last >= numEdges )
+      *last = numEdges;
+
 }
 
 kernel void bfskernel(global long* degreeList,
@@ -55,6 +74,10 @@ kernel void bfskernel(global long* degreeList,
     printf("\n");
   }
 
+  int first, last;
+  assignEdges(globalSize[0], numEdges, i, &first, &last);
+  printf("device: %d firstEdge lastEdge %d %d\n", i, first, last);
+
   int num_updates = 0;
   int level = 0;
   do {
@@ -64,16 +87,20 @@ kernel void bfskernel(global long* degreeList,
     int source = -1;
     for (lid_t j = degreeList[i]; j < degreeList[i+1]; j++){
       lid_t edge = edgeList[j];
-      // If the adjacent edge has been visited and either
-      // (1) source is unknown or
-      // (2) source is known (implicit) and
-      //     depth of old source edge is greater than current edge
-      // then update the source.
-      if (depth[edge] != -1 &&
-          (source == -1 || depth[edge] < depth[source]))
-        source = edge;
+      if(edge >= first && edge < last) {
+          printf("device: %d edge %d\n", i, edge);
+          // If the adjacent edge has been visited and either
+          // (1) source is unknown or
+          // (2) source is known (implicit) and
+          //     depth of old source edge is greater than current edge
+          // then update the source.
+          if (depth[edge] != -1 &&
+                  (source == -1 || depth[edge] < depth[source]))
+              source = edge;
+      }
     }
-    // If a source has been found, and the level is the current one
+    // If a source has been found, this work-item has control of it, and 
+    //  the level is the current one:
     if (source!=-1 && depth[source]==level) {
       // loop over all edges adjacent to the vertex and call the visit
       // function
@@ -83,6 +110,8 @@ kernel void bfskernel(global long* degreeList,
       }
     }
     num_updates = reductionSum(num_updates, localWork);
+    if( !i )
+      printf("device: num_updates %d\n", num_updates);
     level++;
   } while(num_updates);
 }
