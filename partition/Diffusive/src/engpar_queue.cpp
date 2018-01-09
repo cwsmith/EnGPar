@@ -259,6 +259,11 @@ namespace engpar {
           "set exactly one of bfsPush | bfsPull | bfsPullOpenCl (if enabled)\n");
       exit(EXIT_FAILURE);
     }
+
+    if( !PCU_Comm_Self() ) {
+      for(int i=0; i<pg->num_local_edges[t]; i++)
+        printf("edge %d depth %d\n", i, in1->visited[i]);
+    }
       
     //Setup inputs to second BFS traversal
     Inputs* in2 = new Inputs;
