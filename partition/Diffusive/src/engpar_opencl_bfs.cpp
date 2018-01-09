@@ -17,6 +17,21 @@ namespace {
     cl::copy(*engpar_ocl_queue, in, in+numVals, *d_buff);
     return d_buff;
   }
+
+  cl::Program* createProgram(std::string kernelFileName) {
+    cl::Program* program =
+      new cl::Program(*engpar_ocl_context, util::loadProgram(kernelFileName));
+    try {
+      program->build();
+    } catch (cl::Error error) {
+      if (error.err() == CL_BUILD_PROGRAM_FAILURE) {
+        std::string log = program->getBuildInfo<CL_PROGRAM_BUILD_LOG>(*engpar_ocl_device);
+        std::cerr << log << std::endl;
+      }
+      throw(error);
+    }
+    return program;
+  }
 }
 
 namespace engpar {
@@ -32,25 +47,12 @@ namespace engpar {
   int bfs_pull_OpenCL(agi::Ngraph* g, agi::etype t,agi::lid_t start_seed,
                int start_depth, visitFn visit, Inputs* in) {
     std::cout << "OpenCL creating program." << std::endl << std::endl;
-    cl::Program program(*engpar_ocl_context, util::loadProgram("bfskernel.cl"));
-    try
-    {
-      program.build();
-    }
-    catch (cl::Error error)
-    {
-      if (error.err() == CL_BUILD_PROGRAM_FAILURE)
-      {
-        std::string log = program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(*engpar_ocl_device);
-        std::cerr << log << std::endl;
-      }
-      throw(error);
-    }
+    cl::Program* program = createProgram("bfskernel.cl");
 
     std::cout << "OpenCL calling make_kernel." << std::endl << std::endl;
     cl::make_kernel
       <cl::Buffer, cl::Buffer, cl::Buffer, cl::Buffer, cl_long, cl_long, cl_long>
-      bfsPullKernel(program, "bfskernel");
+      bfsPullKernel(*program, "bfskernel");
 
     ////////
     // copy the graph CSRs to the device
@@ -89,6 +91,7 @@ namespace engpar {
     delete d_edgeList;
     delete d_pinDegreeList;
     delete d_pinList;
+    delete program;
   }
 
 }
