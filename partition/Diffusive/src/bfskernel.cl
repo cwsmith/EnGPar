@@ -28,14 +28,16 @@ int depth_visit(global long* depth, const long source, const long dest) {
     }
 }
 
-void assignEdges(int globSize, int numEdges, int i, int* first, int* last) {
+void assignEdges(int numEdges, int* first, int* last) {
+  const int lid = get_local_id(0);
+  const int globSize = get_local_size(0);
   int edgesPerWorkItem = 0;
   if( numEdges < globSize )
       edgesPerWorkItem = 1;
   else
       edgesPerWorkItem = numEdges/globSize;
 
-  *first = i*edgesPerWorkItem;
+  *first = lid*edgesPerWorkItem;
   *last = *first+edgesPerWorkItem;
   
   if( *first >= numEdges ) {
@@ -44,7 +46,6 @@ void assignEdges(int globSize, int numEdges, int i, int* first, int* last) {
 
   if( *last >= numEdges )
       *last = numEdges;
-
 }
 
 kernel void bfskernel(global long* degreeList,
@@ -56,9 +57,8 @@ kernel void bfskernel(global long* degreeList,
                       const int startDepth,
                       local int* localWork)
 {
-  uint i       = get_global_id(0);
-  uint lid     = get_local_id(0);
-  uint dim     = get_work_dim();
+  uint i   = get_local_id(0);
+  uint dim = get_work_dim();
   uint globalSize[3] = {0, 0, 0};
   uint localSize[3] = {0, 0, 0};
   for(uint d=0; d<dim; d++) {
@@ -74,21 +74,22 @@ kernel void bfskernel(global long* degreeList,
     printf("\n");
   }
 
-  int first, last;
-  assignEdges(globalSize[0], numEdges, i, &first, &last);
+  int f, l;
+  assignEdges(numEdges, &f, &l);
+  const int first = f;
+  const int last = l;
   printf("device: %d firstEdge lastEdge %d %d\n", i, first, last);
 
   int num_updates = 0;
   int level = 0;
   do {
-    if( !i )
-      printf("device: level %d\n", level);
+    printf("device: id %d level %d firstEdge lastEdge %d %d\n", i, level, first, last);
     num_updates = 0;
     int source = -1;
     for (lid_t j = degreeList[i]; j < degreeList[i+1]; j++){
       lid_t edge = edgeList[j];
+      printf("device: id %d j %d edge %d first %d last %d\n", i, j, edge, first, last);
       if(edge >= first && edge < last) {
-          printf("device: %d edge %d\n", i, edge);
           // If the adjacent edge has been visited and either
           // (1) source is unknown or
           // (2) source is known (implicit) and
