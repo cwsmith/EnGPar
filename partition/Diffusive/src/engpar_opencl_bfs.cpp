@@ -25,20 +25,27 @@ namespace {
     cl::copy(*engpar_ocl_queue, *d_buff, h_buff, h_buff+numVals);
   }
 
+  void printBuildLogAndOpts(cl::Program* program) {
+    std::string opts = program->getBuildInfo<CL_PROGRAM_BUILD_OPTIONS>(*engpar_ocl_device);
+    std::string log = program->getBuildInfo<CL_PROGRAM_BUILD_LOG>(*engpar_ocl_device);
+    std::cerr << "----OpenCL Build Options----\n" << opts << std::endl;
+    std::cerr << "----OpenCL Build Log--------\n" << log << std::endl;
+    std::cerr << "----------------------------" << std::endl;
+  }
+
   cl::Program* createProgram(std::string kernelFileName) {
     cl::Program* program =
       new cl::Program(*engpar_ocl_context, util::loadProgram(kernelFileName));
-    try {
+
+    int err = 0; 
+    try { 
       program->build("-cl-opt-disable -Werror");
-      std::string opts = program->getBuildInfo<CL_PROGRAM_BUILD_OPTIONS>(*engpar_ocl_device);
-      std::string log = program->getBuildInfo<CL_PROGRAM_BUILD_LOG>(*engpar_ocl_device);
-      std::cerr << "----OpenCL Build Options----\n" << opts << std::endl;
-      std::cerr << "----OpenCL Build Log--------\n" << log << std::endl;
-      std::cerr << "----------------------------" << std::endl;
     } catch (cl::Error error) {
-      std::cerr << "OpenCL Build Error... exiting" << std::endl;
-      throw(error);
+      std::cerr << "OpenCL Build Error..." << std::endl;
+      err = 1;
     }
+    printBuildLogAndOpts(program);
+    if ( err ) exit(EXIT_FAILURE);
     return program;
   }
 }
