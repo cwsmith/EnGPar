@@ -44,6 +44,11 @@ option(ENABLE_OPENCL "Build with OpenCL support" OFF)
 if (ENABLE_OPENCL)
   find_package(OpenCL REQUIRED)
   set(ENGPAR_OPENCL_ENABLED 1)
+  find_path(OPENCLHPPDIR cl.hpp ${OPENCL_HPP_DIR})
+  if(OPENCLHPPDIR-NOTFOUND)
+    message(FATAL_ERROR "OPENCLHPPDIR not found!")
+  endif()
+  message(STATUS "OPENCLHPPDIR ${OPENCLHPPDIR}")
 endif()
 
 configure_file(
