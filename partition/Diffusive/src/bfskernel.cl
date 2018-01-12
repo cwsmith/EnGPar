@@ -74,7 +74,7 @@ void printInputs(global long* degreeList,
     printf("device: numEdges numSeeds startDepth %ld %ld %d\n",
             numEdges, numSeeds, startDepth);
     printf("device: degreeList ");
-    for(long i = 0; i < get_global_size(0); i++)
+    for(size_t i = 0; i < get_global_size(0); i++)
         printf("%ld ", degreeList[i]);
     printf("\n");
     printf("device: edgeList ");
