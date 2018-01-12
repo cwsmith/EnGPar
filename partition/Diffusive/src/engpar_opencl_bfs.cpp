@@ -54,7 +54,7 @@ namespace engpar {
       inputs object
   */
   int bfs_pull_OpenCL(agi::Ngraph* g, agi::etype t,agi::lid_t start_seed,
-               int start_depth, visitFn visit, Inputs* in) {
+               int start_depth, visitFn, Inputs* in) {
     std::cout << "OpenCL creating program." << std::endl << std::endl;
     cl::Program* program = createProgram("bfskernel.cl");
 
