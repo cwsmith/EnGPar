@@ -6,7 +6,7 @@
 #include "../partition/Diffusive/src/engpar_queue.h"
 
 #define __CL_ENABLE_EXCEPTIONS
-#include <CL/cl.hpp>
+#include <cl.hpp>
 #include "util.hpp"
 #include "device_picker.hpp"
 

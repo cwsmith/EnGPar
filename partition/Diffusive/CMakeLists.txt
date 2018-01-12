@@ -15,6 +15,7 @@ set(ENGPAR_HEADERS
 
 if(OpenCL_FOUND)
   include_directories(${CMAKE_HOME_DIRECTORY}/opencl)
+  include_directories(${OPENCLHPPDIR})
   message(STATUS "CMAKE_BINARY_DIR is ${CMAKE_BINARY_DIR}")
   include_directories(${CMAKE_BINARY_DIR}/opencl) # opencl config header
   set(ENGPAR_SOURCES
