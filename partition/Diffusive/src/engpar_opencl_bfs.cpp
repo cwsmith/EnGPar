@@ -60,7 +60,7 @@ namespace engpar {
       printf("%ld ", pg->degree_list[t][i]);
     printf("\n");
     printf("host: edgeList ");
-    for(long i = 0; i < pg->num_local_edges[t]; i++)
+    for(long i = 0; i < pg->num_local_pins[t]; i++)
       printf("%ld ", pg->edge_list[t][i]);
     printf("\n");
     printf("host: depth ");
@@ -92,6 +92,7 @@ namespace engpar {
     cl::make_kernel
       <cl::Buffer,        //degreeList
        cl::Buffer,        //edgeList
+       cl_long,           //numPins
        cl_long,           //numEdges
        cl::Buffer,        //depth
        cl::Buffer,        //seeds
@@ -110,8 +111,8 @@ namespace engpar {
     ////////
     // copy the graph CSRs to the device
     ////////
-    printf("host: numEdges numSeeds startDepth %ld %ld %d\n",
-           pg->num_local_edges[t], in->numSeeds, start_depth);
+    printf("host: numEdges numPins numSeeds startDepth %ld %ld %ld %d\n",
+           pg->num_local_edges[t], pg->num_local_pins[t], in->numSeeds, start_depth);
     // vert-to-nets
     cl::Buffer* d_degreeList = copyToDevice<agi::lid_t>(
         pg->degree_list[t],
@@ -119,7 +120,7 @@ namespace engpar {
         CL_MEM_READ_ONLY);
     cl::Buffer* d_edgeList = copyToDevice<agi::lid_t>(
         pg->edge_list[t],
-        pg->num_local_edges[t],
+        pg->num_local_pins[t],
         CL_MEM_READ_ONLY);
     ////////
     // vertex depth array
@@ -140,7 +141,8 @@ namespace engpar {
     std::cout << "OpenCL kernel queued" << std::endl << std::endl;
     bfsPullKernel(cl::EnqueueArgs(*engpar_ocl_queue, global),
         *d_degreeList, *d_edgeList, pg->num_local_edges[t],
-        *d_depth, *d_seeds, in->numSeeds, start_depth, localWork);
+        pg->num_local_pins[t], *d_depth, *d_seeds, in->numSeeds,
+        start_depth, localWork);
 
     copyFromDevice<int>(d_depth, in->visited, pg->num_local_edges[t]);
 
