@@ -6,6 +6,7 @@ void assignEdges(int numEdges, int* first, int* last);
 void printInputs(global long* degreeList,
         global long* edgeList,
         const long numEdges,
+        const long numPins,
         global int* depth,
         global long* seeds,
         const long numSeeds,
@@ -64,6 +65,7 @@ void assignEdges(int numEdges, int* first, int* last) {
 void printInputs(global long* degreeList,
         global long* edgeList,
         const long numEdges,
+        const long numPins,
         global int* depth,
         global long* seeds,
         const long numSeeds,
@@ -71,14 +73,14 @@ void printInputs(global long* degreeList,
   uint self = get_global_id(0);
   if( !self ) {
     printf("\n\n----------------------------------------------\n");
-    printf("device: numEdges numSeeds startDepth %ld %ld %d\n",
-            numEdges, numSeeds, startDepth);
+    printf("device: numEdges numPins numSeeds startDepth %ld %ld %ld %d\n",
+            numEdges, numPins, numSeeds, startDepth);
     printf("device: degreeList ");
-    for(size_t i = 0; i < get_global_size(0); i++)
+    for(size_t i = 0; i < get_global_size(0)+1; i++)
         printf("%ld ", degreeList[i]);
     printf("\n");
     printf("device: edgeList ");
-    for(long i = 0; i < numEdges; i++)
+    for(long i = 0; i < numPins; i++)
         printf("%ld ", edgeList[i]);
     printf("\n");
     printf("device: depth ");
