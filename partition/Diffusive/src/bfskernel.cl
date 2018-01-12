@@ -19,7 +19,7 @@ int reductionSum(int in, local int* partial_sums) {
 }
 
 //Visit function for first traversal
-int depth_visit(global long* depth, const long source, const long dest) {
+int depth_visit(global int* depth, const long source, const long dest) {
     if (depth[dest]==-1) {
        depth[dest] = depth[source]+1;
        return 1;
