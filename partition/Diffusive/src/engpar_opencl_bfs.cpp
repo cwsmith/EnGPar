@@ -48,9 +48,32 @@ namespace {
     if ( err ) exit(EXIT_FAILURE);
     return program;
   }
+
 }
 
 namespace engpar {
+
+  void printInputs(agi::PNgraph* pg, Inputs* in, agi::etype t) {
+    printf("\n\n----------------------------------------------\n");
+    printf("host: degreeList ");
+    for(long i = 0; i < pg->num_local_verts; i++)
+      printf("%ld ", pg->degree_list[t][i]);
+    printf("\n");
+    printf("host: edgeList ");
+    for(long i = 0; i < pg->num_local_edges[t]; i++)
+      printf("%ld ", pg->edge_list[t][i]);
+    printf("\n");
+    printf("host: depth ");
+    for(int i = 0; i < pg->num_local_edges[t]; i++)
+      printf("%d ", in->visited[i]);
+    printf("\n");
+    printf("host: seeds ");
+    for(long i = 0; i < pg->num_local_edges[t]; i++)
+      printf("%ld ", in->seeds[i]);
+    printf("\n");
+    printf("----------------------------------------------\n\n");
+  }
+
   /*
     Pull based BFS using OpenCL takes in :
       graph
@@ -81,6 +104,8 @@ namespace engpar {
     agi::PNgraph* pg = g->publicize();
     for (agi::lid_t i=start_seed;i<in->numSeeds;i++) 
       in->visited[in->seeds[i]] = start_depth;
+
+    printInputs(pg,in,t);
 
     ////////
     // copy the graph CSRs to the device
