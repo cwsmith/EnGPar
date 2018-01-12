@@ -12,6 +12,7 @@ void printInputs(global long* degreeList,
         const long numSeeds,
         const int startDepth);
 void sanityCheckEdgeOwnership(global long* degreeList, global long* edgeList, int first, int last);
+void printDimensions(void);
 
 // Matthew Scarpino, "OpenCL in Action", Listing 10.2, 2012
 int reductionSum(int in, local int* partial_sums) {
@@ -33,14 +34,12 @@ int reductionSum(int in, local int* partial_sums) {
 
 //Visit function for first traversal
 int depth_visit(global int* depth, const long source, const long dest) {
-    printf("device: depth_visit depth[dest] %d depth[source] %d\n",
-            depth[dest], depth[source]);
-    if (depth[dest]==-1) {
-       depth[dest] = depth[source]+1;
-       return 1;
-    } else {
-       return 0;
-    }
+  if (depth[dest]==-1) {
+     depth[dest] = depth[source]+1;
+     return 1;
+  } else {
+     return 0;
+  }
 }
 
 void assignEdges(int numEdges, int* first, int* last) {
@@ -108,20 +107,11 @@ void printInputs(global long* degreeList,
   barrier(CLK_LOCAL_MEM_FENCE|CLK_GLOBAL_MEM_FENCE);
 }
 
-
-kernel void bfskernel(global long* degreeList,
-                      global long* edgeList,
-                      const long numEdges,
-                      global int* depth,
-                      global long* seeds,
-                      const long numSeeds,
-                      const int startDepth,
-                      local int* localWork)
-{
+void printDimensions(void) {
   uint self = get_global_id(0);
-  uint dim = get_work_dim();
   uint globalSize[3] = {0, 0, 0};
   uint localSize[3] = {0, 0, 0};
+  uint dim = get_work_dim();
   for(uint d=0; d<dim; d++) {
      localSize[d] = get_local_size(d);
      globalSize[d] = get_global_size(d);
@@ -132,7 +122,24 @@ kernel void bfskernel(global long* degreeList,
         printf(" <%d> %d %d ", d, localSize[d], globalSize[d]);
     printf("\n");
   }
-  //printInputs(degreeList, edgeList, numEdges,
+}
+
+kernel void bfskernel(global long* degreeList,
+                      global long* edgeList,
+                      const long numEdges,
+                      const long numPins,
+                      global int* depth,
+                      global long* seeds,
+                      const long numSeeds,
+                      const int startDepth,
+                      local int* localWork)
+{
+  uint self = get_global_id(0);
+  (void)self;
+
+  printDimensions();
+
+  //printInputs(degreeList, edgeList, numEdges, numPins,
   //        depth, seeds, numSeeds, startDepth);
 
   int first, last;
@@ -142,12 +149,10 @@ kernel void bfskernel(global long* degreeList,
   int num_updates = 0;
   int level = 0;
   do {
-    //printf("device: id %d level %d firstEdge lastEdge %d %d\n", self, level, first, last);
     num_updates = 0;
     int source = -1;
     for (lid_t j = degreeList[self]; j < degreeList[self+1]; j++){
       lid_t edge = edgeList[j];
-      printf("device: found edge id %d j %d edge %d first %d last %d\n", self, j, edge, first, last);
       if(edge >= first && edge < last) {
           // If the adjacent edge has been visited and either
           // (1) source is unknown or
