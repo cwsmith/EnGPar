@@ -11,6 +11,7 @@ void printInputs(global long* degreeList,
         global long* seeds,
         const long numSeeds,
         const int startDepth);
+void sanityCheckEdgeOwnership(global long* degreeList, global long* edgeList, int first, int last);
 
 // Matthew Scarpino, "OpenCL in Action", Listing 10.2, 2012
 int reductionSum(int in, local int* partial_sums) {
@@ -43,13 +44,13 @@ int depth_visit(global int* depth, const long source, const long dest) {
 }
 
 void assignEdges(int numEdges, int* first, int* last) {
-  const int self = get_global_id(0);
-  const int globSize = get_global_size(0);
+  const int self = get_local_id(0);
+  const int groupSize = get_local_size(0);
   int edgesPerWorkItem = 0;
-  if( numEdges < globSize )
+  if( numEdges < groupSize )
       edgesPerWorkItem = 1;
   else
-      edgesPerWorkItem = numEdges/globSize;
+      edgesPerWorkItem = numEdges/groupSize;
 
   *first = self*edgesPerWorkItem;
   *last = *first+edgesPerWorkItem;
@@ -60,6 +61,17 @@ void assignEdges(int numEdges, int* first, int* last) {
 
   if( *last >= numEdges )
       *last = numEdges;
+}
+
+void sanityCheckEdgeOwnership(global long* degreeList, global long* edgeList, int first, int last) {
+  const int gid = get_global_id(0);
+  const int lid = get_local_id(0);
+  for (lid_t j = degreeList[gid]; j < degreeList[gid+1]; j++){
+    lid_t edge = edgeList[j];
+    if(edge >= first && edge < last) {
+      printf("device: gid %d lid %d owns edge %d\n", gid, lid, edge);
+    }
+  }
 }
 
 void printInputs(global long* degreeList,
@@ -123,11 +135,9 @@ kernel void bfskernel(global long* degreeList,
   //printInputs(degreeList, edgeList, numEdges,
   //        depth, seeds, numSeeds, startDepth);
 
-  int f, l;
-  assignEdges(numEdges, &f, &l);
-  const int first = f;
-  const int last = l;
-  printf("device: %d firstEdge lastEdge %d %d\n", self, first, last);
+  int first, last;
+  assignEdges(numEdges, &first, &last);
+  sanityCheckEdgeOwnership(degreeList, edgeList, first, last);
 
   int num_updates = 0;
   int level = 0;
