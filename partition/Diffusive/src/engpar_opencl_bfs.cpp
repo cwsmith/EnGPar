@@ -29,12 +29,14 @@ namespace {
     cl::Program* program =
       new cl::Program(*engpar_ocl_context, util::loadProgram(kernelFileName));
     try {
-      program->build();
+      program->build("-cl-opt-disable -Werror");
+      std::string opts = program->getBuildInfo<CL_PROGRAM_BUILD_OPTIONS>(*engpar_ocl_device);
+      std::string log = program->getBuildInfo<CL_PROGRAM_BUILD_LOG>(*engpar_ocl_device);
+      std::cerr << "----OpenCL Build Options----\n" << opts << std::endl;
+      std::cerr << "----OpenCL Build Log--------\n" << log << std::endl;
+      std::cerr << "----------------------------" << std::endl;
     } catch (cl::Error error) {
-      if (error.err() == CL_BUILD_PROGRAM_FAILURE) {
-        std::string log = program->getBuildInfo<CL_PROGRAM_BUILD_LOG>(*engpar_ocl_device);
-        std::cerr << log << std::endl;
-      }
+      std::cerr << "OpenCL Build Error... exiting" << std::endl;
       throw(error);
     }
     return program;
