@@ -13,6 +13,7 @@ include_directories(
   )
 if( OpenCL_FOUND )
   include_directories(${CMAKE_HOME_DIRECTORY}/opencl)
+  include_directories(${OPENCLHPPDIR})
 endif()
 
 if(ENGPAR_FORTRAN_INTERFACE)
