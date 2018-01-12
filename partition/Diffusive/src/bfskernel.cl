@@ -42,8 +42,8 @@ int depth_visit(global int* depth, const long source, const long dest) {
 }
 
 void assignEdges(int numEdges, int* first, int* last) {
-  const int lid = get_local_id(0);
-  const int globSize = get_local_size(0);
+  const int self = get_global_id(0);
+  const int globSize = get_global_size(0);
   int edgesPerWorkItem = 0;
   if( numEdges < globSize )
       edgesPerWorkItem = 1;
