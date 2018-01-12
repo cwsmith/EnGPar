@@ -1,5 +1,16 @@
 typedef long lid_t;
 
+int reductionSum(int in, local int* partial_sums);
+int depth_visit(global int* depth, const long source, const long dest);
+void assignEdges(int numEdges, int* first, int* last);
+void printInputs(global long* degreeList,
+        global long* edgeList,
+        const long numEdges,
+        global int* depth,
+        global long* seeds,
+        const long numSeeds,
+        const int startDepth);
+
 // Matthew Scarpino, "OpenCL in Action", Listing 10.2, 2012
 int reductionSum(int in, local int* partial_sums) {
    int lid = get_local_id(0);
@@ -39,7 +50,7 @@ void assignEdges(int numEdges, int* first, int* last) {
   else
       edgesPerWorkItem = numEdges/globSize;
 
-  *first = lid*edgesPerWorkItem;
+  *first = self*edgesPerWorkItem;
   *last = *first+edgesPerWorkItem;
   
   if( *first >= numEdges ) {
