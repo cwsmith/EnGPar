@@ -40,7 +40,7 @@ target_include_directories(diffusive PUBLIC
   $<INSTALL_INTERFACE:include>
   )
 
-target_link_libraries(diffusive PUBLIC agi)
+target_link_libraries(diffusive agi)
 
 if(OpenCL_FOUND)
   target_link_libraries(diffusive OpenCL::OpenCL)
