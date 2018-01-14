@@ -1,6 +1,7 @@
 typedef long lid_t;
 
 int reductionSum(int in, local int* partial_sums);
+char reductionSum_char(char in, local char* partial_sums);
 int depth_visit(global int* depth, const long source, const long dest);
 void assignEdges(int numEdges, int* first, int* last);
 void printInputs(global long* degreeList,
@@ -16,6 +17,23 @@ void printDimensions(void);
 
 // Matthew Scarpino, "OpenCL in Action", Listing 10.2, 2012
 int reductionSum(int in, local int* partial_sums) {
+   int lid = get_local_id(0);
+   int group_size = get_local_size(0);
+
+   partial_sums[lid] = in;
+   barrier(CLK_LOCAL_MEM_FENCE);
+
+   for(int i = group_size/2; i>0; i >>= 1) {
+      if(lid < i) {
+         partial_sums[lid] += partial_sums[lid + i];
+      }
+      barrier(CLK_LOCAL_MEM_FENCE);
+   }
+
+   return partial_sums[0];
+}
+
+char reductionSum_char(char in, local char* partial_sums) {
    int lid = get_local_id(0);
    int group_size = get_local_size(0);
 
@@ -124,6 +142,7 @@ void printDimensions(void) {
   }
 }
 
+
 kernel void bfskernel(global long* degreeList,
                       global long* edgeList,
                       const long numEdges,
@@ -132,12 +151,20 @@ kernel void bfskernel(global long* degreeList,
                       global long* seeds,
                       const long numSeeds,
                       const int startDepth,
-                      local int* localWork)
+                      local int* localWork,
+                      global char* isDone,
+                      global char* isDoneGlob)
 {
   uint self = get_global_id(0);
+  uint lid = get_local_id(0);
+  uint group = get_group_id(0);
   (void)self;
 
   printDimensions();
+  //*isDone = 1;   // global scalar
+  isDoneGlob[self] = 1;  // global array
+
+  /*
 
   //printInputs(degreeList, edgeList, numEdges, numPins,
   //        depth, seeds, numSeeds, startDepth);
@@ -148,8 +175,7 @@ kernel void bfskernel(global long* degreeList,
 
   int num_updates = 0;
   int level = 0;
-  do {
-    num_updates = 0;
+  while(1) {
     int source = -1;
     for (lid_t j = degreeList[self]; j < degreeList[self+1]; j++){
       lid_t edge = edgeList[j];
@@ -178,5 +204,6 @@ kernel void bfskernel(global long* degreeList,
     if( !self )
       printf("device: num_updates %d\n", num_updates);
     level++;
-  } while(num_updates);
+  }
+  */
 }
