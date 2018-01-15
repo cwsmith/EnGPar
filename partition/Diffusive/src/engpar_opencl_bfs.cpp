@@ -99,8 +99,7 @@ namespace engpar {
        cl_long,           //numSeeds
        cl_int,            //startDepth
        cl::LocalSpaceArg, //localWork - int
-       cl::Buffer,        //notDone global scalar
-       cl::Buffer>        //notDone global array
+       cl::Buffer>        //notDone global scalar
       bfsPullKernel(*program, "bfskernel");
 
     // initialize the visited/depth array
@@ -135,43 +134,31 @@ namespace engpar {
         in->seeds,
         pg->num_local_edges[t],
         CL_MEM_READ_ONLY);
-    char h_notdone = 0;
-    cl::Buffer* d_notdone = copyToDevice<char>(
-        &h_notdone,
+    char h_done = 1;
+    cl::Buffer* d_done = copyToDevice<char>(
+        &h_done,
         1,
         CL_MEM_READ_WRITE);
 
-    const int globalSize = 1024*1024;
+    const int globalSize = 1024*1024*1024;
     
-    char* h_notdone_glob = new char[globalSize];
-    cl::Buffer* d_notdone_glob = copyToDevice<char>(
-        h_notdone_glob,
-        globalSize,
-        CL_MEM_READ_WRITE);
-
     cl::LocalSpaceArg localWork = cl::Local(sizeof(int)*sizeof(pg->num_local_verts)); // FIXME - oversized
 
     std::cout << "OpenCL initialization complete." << std::endl << std::endl;
     cl::NDRange global(globalSize);
 
-    printf("notdone %d\n", (int) h_notdone);
+    printf("done %d\n", (int) h_done);
     std::cout << "OpenCL kernel queued" << std::endl << std::endl;
     double t0 = PCU_Time();
     bfsPullKernel(cl::EnqueueArgs(*engpar_ocl_queue, global),
         *d_degreeList, *d_edgeList, pg->num_local_edges[t],
         pg->num_local_pins[t], *d_depth, *d_seeds, in->numSeeds,
-        start_depth, localWork, *d_notdone, *d_notdone_glob);
+        start_depth, localWork, *d_done);
 
     copyFromDevice<int>(d_depth, in->visited, pg->num_local_edges[t]);
-    copyFromDevice<char>(d_notdone, &h_notdone, 1);
-    copyFromDevice<char>(d_notdone_glob, h_notdone_glob, globalSize);
-    // global array {
-    h_notdone = 0;
-    for(int i=0; i<globalSize; i++)
-      h_notdone = h_notdone_glob[i];
-    // }
+    copyFromDevice<char>(d_done, &h_done, 1);
     double t1 = PCU_Time()-t0;
-    printf("time (s) %f notdone %d\n", t1, (int) h_notdone);
+    printf("time (s) %f notdone %d\n", t1, (int) h_done);
 
     // TODO: reconstruct seeds array from depth array
     //  the serial implementation computes the seeds array on the fly, but that
@@ -183,7 +170,7 @@ namespace engpar {
     delete d_edgeList;
     delete d_depth;
     delete d_seeds;
-    delete d_notdone;
+    delete d_done;
     delete program;
   }
 
