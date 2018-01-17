@@ -1,36 +1,12 @@
 typedef long lid_t;
 
-int reductionSum(int in, local int* partial_sums);
 int depth_visit(global int* depth, const long source, const long dest);
-void assignEdges(int numEdges, int* first, int* last);
 void printInputs(global long* degreeList,
         global long* edgeList,
         const long numEdges,
         const long numPins,
-        global int* depth,
-        global long* seeds,
-        const long numSeeds,
-        const int startDepth);
-void sanityCheckEdgeOwnership(global long* degreeList, global long* edgeList, int first, int last);
+        global int* depth);
 void printDimensions(void);
-
-// Matthew Scarpino, "OpenCL in Action", Listing 10.2, 2012
-int reductionSum(int in, local int* partial_sums) {
-   int lid = get_local_id(0);
-   int group_size = get_local_size(0);
-
-   partial_sums[lid] = in;
-   barrier(CLK_LOCAL_MEM_FENCE);
-
-   for(int i = group_size/2; i>0; i >>= 1) {
-      if(lid < i) {
-         partial_sums[lid] += partial_sums[lid + i];
-      }
-      barrier(CLK_LOCAL_MEM_FENCE);
-   }
-
-   return partial_sums[0];
-}
 
 //Visit function for first traversal
 int depth_visit(global int* depth, const long source, const long dest) {
@@ -42,50 +18,16 @@ int depth_visit(global int* depth, const long source, const long dest) {
   }
 }
 
-void assignEdges(int numEdges, int* first, int* last) {
-  const int self = get_local_id(0);
-  const int groupSize = get_local_size(0);
-  int edgesPerWorkItem = 0;
-  if( numEdges < groupSize )
-      edgesPerWorkItem = 1;
-  else
-      edgesPerWorkItem = numEdges/groupSize;
-
-  *first = self*edgesPerWorkItem;
-  *last = *first+edgesPerWorkItem;
-  
-  if( *first >= numEdges ) {
-      *first = *last = -1;
-  }
-
-  if( *last >= numEdges )
-      *last = numEdges;
-}
-
-void sanityCheckEdgeOwnership(global long* degreeList, global long* edgeList, int first, int last) {
-  const int gid = get_global_id(0);
-  const int lid = get_local_id(0);
-  for (lid_t j = degreeList[gid]; j < degreeList[gid+1]; j++){
-    lid_t edge = edgeList[j];
-    if(edge >= first && edge < last) {
-      printf("device: gid %d lid %d owns edge %d\n", gid, lid, edge);
-    }
-  }
-}
-
 void printInputs(global long* degreeList,
         global long* edgeList,
         const long numEdges,
         const long numPins,
-        global int* depth,
-        global long* seeds,
-        const long numSeeds,
-        const int startDepth) {
+        global int* depth) {
   uint self = get_global_id(0);
   if( !self ) {
     printf("\n\n----------------------------------------------\n");
-    printf("device: numEdges numPins numSeeds startDepth %ld %ld %ld %d\n",
-            numEdges, numPins, numSeeds, startDepth);
+    printf("device: numEdges numPins %ld %ld\n",
+            numEdges, numPins);
     printf("device: degreeList ");
     for(size_t i = 0; i < get_global_size(0)+1; i++)
         printf("%ld ", degreeList[i]);
@@ -97,10 +39,6 @@ void printInputs(global long* degreeList,
     printf("device: depth ");
     for(int i = 0; i < numEdges; i++)
         printf("%d ", depth[i]);
-    printf("\n");
-    printf("device: seeds ");
-    for(long i = 0; i < numEdges; i++)
-        printf("%ld ", seeds[i]);
     printf("\n");
     printf("----------------------------------------------\n\n");
   }
@@ -124,59 +62,55 @@ void printDimensions(void) {
   }
 }
 
-kernel void bfskernel(global long* degreeList,
-                      global long* edgeList,
-                      const long numEdges,
-                      const long numPins,
-                      global int* depth,
-                      global long* seeds,
-                      const long numSeeds,
-                      const int startDepth,
-                      local int* localWork)
+/* loop over the edges of the vertex associated with the work-item
+ * if the work-item owns the vertex then record the depth of the vertex
+ */
+kernel void edgePull(global long* degreeList,
+                     global long* edgeList,
+                     const long numEdges,
+                     const long numPins,
+                     global int* depth,
+                     global char* mask,
+                     global char* maskupdates)
 {
-  uint self = get_global_id(0);
-  (void)self;
+  uint gid = get_global_id(0);
 
   printDimensions();
 
   //printInputs(degreeList, edgeList, numEdges, numPins,
-  //        depth, seeds, numSeeds, startDepth);
+  //        depth);
 
-  int first, last;
-  assignEdges(numEdges, &first, &last);
-  sanityCheckEdgeOwnership(degreeList, edgeList, first, last);
+  for (lid_t j = degreeList[gid]; j < degreeList[gid+1]; j++){
+    lid_t edge = edgeList[j];
+    if(edge >= first && edge < last) {
+        // If the adjacent edge has been visited and either
+        // (1) source is unknown or
+        // (2) source is known (implicit) and
+        //     depth of old source edge is greater than current edge
+        // then update the source.
+        if (depth[edge] != -1 &&
+                (source == -1 || depth[edge] < depth[source]))
+            mask[edge] = 
+    }
+  }
+}
 
-  int num_updates = 0;
-  int level = 0;
-  do {
-    num_updates = 0;
-    int source = -1;
+kernel void updateMask(global long* degreeList,
+                      global long* edgeList,
+                      const long numEdges,
+                      const long numPins,
+                      global int* depth,
+                      global char* mask,
+                      global char* maskupdates)
+{
+  // If a source has been found, this work-item has control of it, and 
+  //  the level is the current one:
+  if (source!=-1 && depth[source]==level) {
+    // loop over all edges adjacent to the vertex and call the visit
+    // function
     for (lid_t j = degreeList[self]; j < degreeList[self+1]; j++){
       lid_t edge = edgeList[j];
-      if(edge >= first && edge < last) {
-          // If the adjacent edge has been visited and either
-          // (1) source is unknown or
-          // (2) source is known (implicit) and
-          //     depth of old source edge is greater than current edge
-          // then update the source.
-          if (depth[edge] != -1 &&
-                  (source == -1 || depth[edge] < depth[source]))
-              source = edge;
-      }
+      num_updates+=depth_visit(depth,source,edge);
     }
-    // If a source has been found, this work-item has control of it, and 
-    //  the level is the current one:
-    if (source!=-1 && depth[source]==level) {
-      // loop over all edges adjacent to the vertex and call the visit
-      // function
-      for (lid_t j = degreeList[self]; j < degreeList[self+1]; j++){
-        lid_t edge = edgeList[j];
-        num_updates+=depth_visit(depth,source,edge);
-      }
-    }
-    num_updates = reductionSum(num_updates, localWork);
-    if( !self )
-      printf("device: num_updates %d\n", num_updates);
-    level++;
-  } while(num_updates);
+  }
 }

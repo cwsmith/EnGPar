@@ -95,9 +95,6 @@ namespace engpar {
        cl_long,           //numPins
        cl_long,           //numEdges
        cl::Buffer,        //depth
-       cl::Buffer,        //seeds
-       cl_long,           //numSeeds
-       cl_int,            //startDepth
        cl::LocalSpaceArg> //localWork
       bfsPullKernel(*program, "bfskernel");
 
@@ -129,10 +126,6 @@ namespace engpar {
         in->visited,
         pg->num_local_edges[t],
         CL_MEM_READ_WRITE);
-    cl::Buffer* d_seeds = copyToDevice<agi::lid_t>(
-        in->seeds,
-        pg->num_local_edges[t],
-        CL_MEM_READ_ONLY);
     cl::LocalSpaceArg localWork = cl::Local(sizeof(int)*sizeof(pg->num_local_verts));
 
     std::cout << "OpenCL initialization complete." << std::endl << std::endl;
@@ -141,8 +134,7 @@ namespace engpar {
     std::cout << "OpenCL kernel queued" << std::endl << std::endl;
     bfsPullKernel(cl::EnqueueArgs(*engpar_ocl_queue, global),
         *d_degreeList, *d_edgeList, pg->num_local_edges[t],
-        pg->num_local_pins[t], *d_depth, *d_seeds, in->numSeeds,
-        start_depth, localWork);
+        pg->num_local_pins[t], *d_depth, localWork);
 
     copyFromDevice<int>(d_depth, in->visited, pg->num_local_edges[t]);
 
@@ -155,7 +147,6 @@ namespace engpar {
     delete d_degreeList;
     delete d_edgeList;
     delete d_depth;
-    delete d_seeds;
     delete program;
   }
 
