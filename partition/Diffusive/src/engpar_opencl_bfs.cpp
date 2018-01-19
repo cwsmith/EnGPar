@@ -95,7 +95,7 @@ namespace engpar {
        cl_long,           //numPins
        cl_long,           //numEdges
        cl::Buffer,        //depth
-       cl::LocalSpaceArg> //localWork
+       cl::Buffer>        //update flag
       bfsPullKernel(*program, "bfskernel");
 
     // initialize the visited/depth array
@@ -126,15 +126,25 @@ namespace engpar {
         in->visited,
         pg->num_local_edges[t],
         CL_MEM_READ_WRITE);
-    cl::LocalSpaceArg localWork = cl::Local(sizeof(int)*sizeof(pg->num_local_verts));
 
     std::cout << "OpenCL initialization complete." << std::endl << std::endl;
     cl::NDRange global(pg->num_local_verts);
 
-    std::cout << "OpenCL kernel queued" << std::endl << std::endl;
-    bfsPullKernel(cl::EnqueueArgs(*engpar_ocl_queue, global),
-        *d_degreeList, *d_edgeList, pg->num_local_edges[t],
-        pg->num_local_pins[t], *d_depth, localWork);
+    int maxLevel=1000;
+    int level=0;
+    char h_changes;
+    do { 
+      h_changes = false;
+      cl::Buffer* d_changes = copyToDevice<char>(
+          &h_changes,
+          1,
+          CL_MEM_WRITE_ONLY);
+      bfsPullKernel(cl::EnqueueArgs(*engpar_ocl_queue, global),
+          *d_degreeList, *d_edgeList, pg->num_local_edges[t],
+          pg->num_local_pins[t], *d_depth, *d_changes);
+      copyFromDevice<char>(d_changes, &h_changes, 1);
+      level++;
+    } while(h_changes && level < maxLevel);
 
     copyFromDevice<int>(d_depth, in->visited, pg->num_local_edges[t]);
 
