@@ -10,7 +10,7 @@ debug=$3
 grind=$4
 
 cd test
-cp /Users/cwsmith/develop/engpar/partition/Diffusive/src/bfskernel.cl .
+cp ~/develop/EnGPar/partition/Diffusive/src/bfskernel.cl .
 
 [ $# -ne 4 ] && usage && exit 1
 

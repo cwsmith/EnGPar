@@ -173,9 +173,17 @@ namespace engpar {
         for (agi::lid_t j=pg->degree_list[t][v];j<pg->degree_list[t][v+1];j++){
           agi::lid_t edge = pg->edge_list[t][j];
           if (in->visited[edge] != -1 &&
-              (source == -1 || in->visited[edge] < in->visited[source]))
+              (source == -1 || in->visited[edge] < in->visited[source])) {
+            // If the adjacent edge has been visited and either
+            // (1) source is unknown or
+            // (2) source is known (implicit) and
+            //     depth of old source edge is greater than current edge
+            // then update the source.
             source = edge;
+          }
         }
+        // if the smallest edge is in the current level then
+        // for each unvisited adjacent edge, set the depth to level+1
         if (source!=-1&&in->visited[source]==level) {
           for (agi::lid_t j=pg->degree_list[t][v];j<pg->degree_list[t][v+1];j++){
             agi::lid_t edge = pg->edge_list[t][j];

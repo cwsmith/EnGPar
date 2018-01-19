@@ -1,22 +1,12 @@
 typedef long lid_t;
 
-int depth_visit(global int* depth, const long source, const long dest);
 void printInputs(global long* degreeList,
         global long* edgeList,
         const long numEdges,
         const long numPins,
         global int* depth);
 void printDimensions(void);
-
-//Visit function for first traversal
-int depth_visit(global int* depth, const long source, const long dest) {
-  if (depth[dest]==-1) {
-     depth[dest] = depth[source]+1;
-     return 1;
-  } else {
-     return 0;
-  }
-}
+bool visited(lid_t edge, global int* depth);
 
 void printInputs(global long* degreeList,
         global long* edgeList,
@@ -62,55 +52,48 @@ void printDimensions(void) {
   }
 }
 
-/* loop over the edges of the vertex associated with the work-item
- * if the work-item owns the vertex then record the depth of the vertex
- */
-kernel void edgePull(global long* degreeList,
+// edges that have not been visited have a depth of -1
+bool visited(lid_t edge, global int* depth) {
+    return (depth[edge] != -1);
+}
+
+kernel void bfskernel(global long* degreeList,
                      global long* edgeList,
                      const long numEdges,
                      const long numPins,
                      global int* depth,
-                     global char* mask,
-                     global char* maskupdates)
+                     global char* changes)
 {
   uint gid = get_global_id(0);
+  const int LARGE_DEPTH = 1024*1024*1024;
+  const int firstEdge=degreeList[gid];
+  const int lastEdge=degreeList[gid+1];
 
   printDimensions();
 
-  //printInputs(degreeList, edgeList, numEdges, numPins,
-  //        depth);
-
-  for (lid_t j = degreeList[gid]; j < degreeList[gid+1]; j++){
+  // loop through the edges adjacent to the vertex and find
+  // the one with the smallest depth
+  lid_t minDepthEdge = -1;
+  int minDepth = LARGE_DEPTH;
+  for (lid_t j = firstEdge; j < lastEdge; j++){
     lid_t edge = edgeList[j];
-    if(edge >= first && edge < last) {
-        // If the adjacent edge has been visited and either
-        // (1) source is unknown or
-        // (2) source is known (implicit) and
-        //     depth of old source edge is greater than current edge
-        // then update the source.
-        if (depth[edge] != -1 &&
-                (source == -1 || depth[edge] < depth[source]))
-            mask[edge] = 
+    if (visited(edge,depth) ) {
+      if (depth[edge] < minDepth) {
+        // this edge has the lowest depth of those adjacent to vtx 'gid'
+        minDepthEdge = edge;
+        minDepth = depth[edge];
+      }
     }
   }
-}
-
-kernel void updateMask(global long* degreeList,
-                      global long* edgeList,
-                      const long numEdges,
-                      const long numPins,
-                      global int* depth,
-                      global char* mask,
-                      global char* maskupdates)
-{
-  // If a source has been found, this work-item has control of it, and 
-  //  the level is the current one:
-  if (source!=-1 && depth[source]==level) {
-    // loop over all edges adjacent to the vertex and call the visit
-    // function
-    for (lid_t j = degreeList[self]; j < degreeList[self+1]; j++){
+  if (minDepth != LARGE_DEPTH) {
+    // a visited edge was found - loop through the adjacent 
+    // edges again and set the depth of unvisited edges
+    for (lid_t j = firstEdge; j < lastEdge; j++){
       lid_t edge = edgeList[j];
-      num_updates+=depth_visit(depth,source,edge);
+      if (!visited(edge,depth)) {
+          depth[edge] = minDepth+1;
+          *changes = true;
+      }
     }
   }
 }
