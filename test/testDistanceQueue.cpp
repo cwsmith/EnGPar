@@ -15,7 +15,7 @@ extern cl::CommandQueue* engpar_ocl_queue;
 extern cl::Device* engpar_ocl_device;
 
 void parseDriverArguments(int argc, char *argv[],
-    cl_uint *deviceIndex, int* bfsmode, const char* graphFileName) {
+    cl_uint *deviceIndex, int* bfsmode, std::string& graphFileName) {
   for (int i = 1; i < argc; i++) {
     if (!strcmp(argv[i], "--list")) {
       // Get list of devices
@@ -43,7 +43,7 @@ void parseDriverArguments(int argc, char *argv[],
         std::cout << "Invalid graph\n";
         exit(1);
       }
-      graphFileName = argv[i];
+      graphFileName = std::string(argv[i]);
     } else if (!strcmp(argv[i], "--bfsmode")) {
       if (++i >= argc) {
         std::cout << "Invalid bfsmode\n";
@@ -68,7 +68,7 @@ int main(int argc, char* argv[]) {
 
   int bfsmode = 0;
   agi::Ngraph* g;
-  char* graphFileName = NULL;
+  std::string graphFileName("");
   try
   {
     cl_uint deviceIndex = 0;
@@ -105,14 +105,15 @@ int main(int argc, char* argv[]) {
   }
 
 
-  if ( !graphFileName )
+  printf("graph file: \'%s\'\n", graphFileName.c_str());
+  if ( graphFileName == "" )
     if (PCU_Comm_Peers()==2)
       g = buildDisconnected2Graph();
     else
       g=buildHyperGraphLine();
   else {
     g = agi::createEmptyGraph();
-    g->loadFromFile(graphFileName);
+    g->loadFromFile(graphFileName.c_str());
   }
   PCU_Barrier();
 
