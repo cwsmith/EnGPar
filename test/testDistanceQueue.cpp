@@ -15,9 +15,30 @@ extern cl::CommandQueue* engpar_ocl_queue;
 extern cl::Device* engpar_ocl_device;
 
 void parseDriverArguments(int argc, char *argv[],
-    int* bfsmode, const char* graphFileName) {
+    cl_uint *deviceIndex, int* bfsmode, const char* graphFileName) {
   for (int i = 1; i < argc; i++) {
-    if (!strcmp(argv[i], "--graph")) {
+    if (!strcmp(argv[i], "--list")) {
+      // Get list of devices
+      std::vector<cl::Device> devices;
+      unsigned numDevices = getDeviceList(devices);
+
+      // Print device names
+      if (numDevices == 0) {
+        std::cout << "No devices found.\n";
+      } else {
+        std::cout << "\nDevices:\n";
+        for (unsigned int i = 0; i < numDevices; i++) {
+          std::cout << i << ": " << getDeviceName(devices[i]) << "\n";
+        }
+        std::cout << "\n";
+      }
+      exit(0);
+    } else if (!strcmp(argv[i], "--device")) {
+      if (++i >= argc || !parseUInt(argv[i], deviceIndex)) {
+        std::cout << "Invalid device index\n";
+        exit(1);
+      }
+    } else if (!strcmp(argv[i], "--graph")) {
       if (++i >= argc) {
         std::cout << "Invalid graph\n";
         exit(1);
@@ -33,23 +54,25 @@ void parseDriverArguments(int argc, char *argv[],
       std::cout << "\n";
       std::cout << "      --bfsmode     [0|1|2]   0:push, 1:pull, 2:pullOpenCL" << std::endl;
       std::cout << "      --graph       <pathToGraphFile.bgd>" << std::endl;
+      std::cout << "      --list               List available devices\n";
+      std::cout << "      --device     INDEX   Select device at INDEX\n";
       std::cout << "\n";
       exit(0);
     }
   }
 }
 
-
-
 int main(int argc, char* argv[]) {
   MPI_Init(&argc,&argv);
   EnGPar_Initialize();
 
   int bfsmode = 0;
+  agi::Ngraph* g;
+  char* graphFileName = NULL;
   try
   {
     cl_uint deviceIndex = 0;
-    parseArguments(argc, argv, &deviceIndex);
+    parseDriverArguments(argc,argv,&deviceIndex,&bfsmode,graphFileName);
 
     // Get list of devices
     std::vector<cl::Device> devices;
@@ -81,9 +104,6 @@ int main(int argc, char* argv[]) {
               << std::endl;
   }
 
-  agi::Ngraph* g;
-  char* graphFileName = NULL;
-  parseDriverArguments(argc,argv,&bfsmode,graphFileName);
 
   if ( !graphFileName )
     if (PCU_Comm_Peers()==2)
