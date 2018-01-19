@@ -98,12 +98,11 @@ namespace engpar {
        cl::Buffer>        //update flag
       bfsPullKernel(*program, "bfskernel");
 
+    double t0=PCU_Time();
     // initialize the visited/depth array
     agi::PNgraph* pg = g->publicize();
     for (agi::lid_t i=start_seed;i<in->numSeeds;i++) 
       in->visited[in->seeds[i]] = start_depth;
-
-    printInputs(pg,in,t);
 
     ////////
     // copy the graph CSRs to the device
@@ -158,6 +157,8 @@ namespace engpar {
     delete d_edgeList;
     delete d_depth;
     delete program;
+    if(!PCU_Comm_Self())
+      printf("opencl bfs time (s) %f\n", PCU_Time()-t0);
   }
 
 }

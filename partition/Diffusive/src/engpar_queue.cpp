@@ -251,12 +251,17 @@ namespace engpar {
     //Run first BFS using depth visit operation
     //need to check that exactly one of these is set... or use a better
     // mechanism
-    if (input->bfsPush)
+    std::string bfsmethod;
+    double t0 = PCU_Time();
+    if (input->bfsPush) {
+      bfsmethod="push";
       bfs_push(g,t,0,0,depth_visit,in1);
-    else if (input->bfsPull)
+    } else if (input->bfsPull) {
+      bfsmethod="pull";
       bfs_pull(g,t,0,0,depth_visit,in1);
-    else if (input->bfsPullOpenCL) {
+    } else if (input->bfsPullOpenCL) {
 #ifdef ENGPAR_OPENCL_ENABLED
+      bfsmethod="opencl";
       bfs_pull_OpenCL(g,t,0,0,depth_visit,in1);
 #else 
       fprintf(stderr, "bfsPullOpenCL requested, but OpenCL is not enabled!"
@@ -267,6 +272,8 @@ namespace engpar {
           "set exactly one of bfsPush | bfsPull | bfsPullOpenCl (if enabled)\n");
       exit(EXIT_FAILURE);
     }
+    if( !PCU_Comm_Self() )
+      printf("outer %s bfs time (s) %f\n", bfsmethod.c_str(), PCU_Time()-t0);
 
     if( !PCU_Comm_Self() ) {
       for(int i=0; i<pg->num_local_edges[t]; i++)
