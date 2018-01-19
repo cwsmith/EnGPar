@@ -69,8 +69,6 @@ kernel void bfskernel(global long* degreeList,
   const int firstEdge=degreeList[gid];
   const int lastEdge=degreeList[gid+1];
 
-  printDimensions();
-
   // loop through the edges adjacent to the vertex and find
   // the one with the smallest depth
   lid_t minDepthEdge = -1;
