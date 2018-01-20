@@ -129,7 +129,7 @@ namespace engpar {
     cl::NDRange global(pg->num_local_verts);
 
     int maxLevel=1000;
-    int level=0;
+    int level=start_depth;
     char h_changes;
     do { 
       h_changes = false;
