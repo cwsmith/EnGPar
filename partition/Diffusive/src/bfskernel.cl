@@ -59,10 +59,9 @@ bool visited(lid_t edge, global int* depth) {
 
 kernel void bfskernel(global long* degreeList,
                      global long* edgeList,
-                     const long numEdges,
-                     const long numPins,
                      global int* depth,
-                     global char* changes)
+                     global char* changes,
+                     const int level)
 {
   uint gid = get_global_id(0);
   const int LARGE_DEPTH = 1024*1024*1024;
@@ -83,7 +82,7 @@ kernel void bfskernel(global long* degreeList,
       }
     }
   }
-  if (minDepth != LARGE_DEPTH) {
+  if (minDepth == level) {
     // a visited edge was found - loop through the adjacent 
     // edges again and set the depth of unvisited edges
     for (lid_t j = firstEdge; j < lastEdge; j++){
