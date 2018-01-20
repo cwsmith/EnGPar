@@ -92,10 +92,9 @@ namespace engpar {
     cl::make_kernel
       <cl::Buffer,        //degreeList
        cl::Buffer,        //edgeList
-       cl_long,           //numPins
-       cl_long,           //numEdges
        cl::Buffer,        //depth
-       cl::Buffer>        //update flag
+       cl::Buffer,        //update flag
+       cl_int>            //bfs level
       bfsPullKernel(*program, "bfskernel");
 
     double t0=PCU_Time();
@@ -139,8 +138,7 @@ namespace engpar {
           1,
           CL_MEM_WRITE_ONLY);
       bfsPullKernel(cl::EnqueueArgs(*engpar_ocl_queue, global),
-          *d_degreeList, *d_edgeList, pg->num_local_edges[t],
-          pg->num_local_pins[t], *d_depth, *d_changes);
+          *d_degreeList, *d_edgeList, *d_depth, *d_changes, level);
       copyFromDevice<char>(d_changes, &h_changes, 1);
       level++;
     } while(h_changes && level < maxLevel);
