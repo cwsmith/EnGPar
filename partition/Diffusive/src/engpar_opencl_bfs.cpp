@@ -85,10 +85,8 @@ namespace engpar {
   */
   int bfs_pull_OpenCL(agi::Ngraph* g, agi::etype t,agi::lid_t start_seed,
                int start_depth, visitFn, Inputs* in) {
-    std::cout << "OpenCL creating program." << std::endl << std::endl;
     cl::Program* program = createProgram("bfskernel.cl");
 
-    std::cout << "OpenCL calling make_kernel." << std::endl << std::endl;
     cl::make_kernel
       <cl::Buffer,        //degreeList
        cl::Buffer,        //edgeList
@@ -125,7 +123,6 @@ namespace engpar {
         pg->num_local_edges[t],
         CL_MEM_READ_WRITE);
 
-    std::cout << "OpenCL initialization complete." << std::endl << std::endl;
     cl::NDRange global(pg->num_local_verts);
 
     int maxLevel=1000;
