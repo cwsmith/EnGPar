@@ -20,6 +20,11 @@ aero1Belm/graph128Ki_25114
 aero1Belm/afterMigr_81334
 aero1Belm/afterMigr_1457
 cube/cube
+upright/67k
+upright/190k
+upright/400k
+upright/890k
+upright/1.6M
 EOF
 
 bfsModeString=("push" "pull" "opencl")
