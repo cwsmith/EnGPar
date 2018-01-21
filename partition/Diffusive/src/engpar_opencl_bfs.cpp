@@ -101,11 +101,16 @@ namespace engpar {
     for (agi::lid_t i=start_seed;i<in->numSeeds;i++) 
       in->visited[in->seeds[i]] = start_depth;
 
+    printf("host: numVtx numEdges numPins numSeeds startDepth "
+           "%ld %ld %ld %ld %d\n",
+           pg->num_local_verts,
+           pg->num_local_edges[t],
+           pg->num_local_pins[t],
+           in->numSeeds,
+           start_depth);
     ////////
     // copy the graph CSRs to the device
     ////////
-    printf("host: numEdges numPins numSeeds startDepth %ld %ld %ld %d\n",
-           pg->num_local_edges[t], pg->num_local_pins[t], in->numSeeds, start_depth);
     // vert-to-nets
     cl::Buffer* d_degreeList = copyToDevice<agi::lid_t>(
         pg->degree_list[t],
