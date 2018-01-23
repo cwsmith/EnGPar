@@ -30,11 +30,34 @@ EOF
 bfsModeString=("push" "pull" "opencl")
 for bfsmode in 0 1 2; do
   echo "${bfsModeString[$bfsmode]} bfs"
-  for i in ${tests[@]}; do
-    $bin --device 0 --graph ${graphDir}/$i --bfsmode $bfsmode >> ${bfsModeString[$bfsmode]}.log
+  for t in ${tests[@]}; do
+    graphName=${t##*/}
+    for i in {1..5}; do
+      $bin --device 0 --graph ${graphDir}/$t --bfsmode $bfsmode >> ${bfsModeString[$bfsmode]}_${graphName}.log
+    done
   done
 done
-awk '/numEdges/ {print $6}' opencl.log
-grep -a 'push bfs time' push.log
-grep -a 'pull bfs time' pull.log
-grep -a '^opencl bfs time' opencl.log
+
+cmdString=('/push bfs time/ {sum+=$6; cnt+=1} END {print sum/cnt}' 
+           '/pull bfs time/ {sum+=$6; cnt+=1} END {print sum/cnt}'
+           '/^opencl bfs time/ {sum+=$5; cnt+=1} END {print sum/cnt}')
+for bfsmode in 0 1 2; do
+  outlog=${bfsModeString[$bfsmode]}AvgTimes.csv
+  cat /dev/null > $outlog
+  echo "${bfsModeString[$bfsmode]} bfs"
+  for t in ${tests[@]}; do
+    graphName=${t##*/}
+    inlog=${bfsModeString[$bfsmode]}_${graphName}.log
+    avg=$(awk "${cmdString[$bfsmode]}" $inlog)
+    echo "$graphName,$avg" >> $outlog
+  done
+done
+
+#print number of vertices and edges in each test graph
+outlog=graphs.csv
+cat /dev/null > $outlog
+for t in ${tests[@]}; do
+  graphName=${t##*/}
+  vertsAndEdges=$(awk '/numVtx/ {print $7","$8; exit}' opencl_${graphName}.log)
+  echo "$graphName,$vertsAndEdges" >> $outlog
+done
