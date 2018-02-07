@@ -142,8 +142,10 @@ const char *err_code (cl_int err_in)
             return (char*)"CL_INVALID_MIP_LEVEL";
         case CL_INVALID_GLOBAL_WORK_SIZE:
             return (char*)"CL_INVALID_GLOBAL_WORK_SIZE";
+#ifdef CL_VERSION_1_2
         case CL_INVALID_PROPERTY:
             return (char*)"CL_INVALID_PROPERTY";
+#endif
 
         default:
             return (char*)"UNKNOWN ERROR";
