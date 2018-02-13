@@ -33,18 +33,40 @@ namespace {
     std::cerr << "----------------------------" << std::endl;
   }
 
-  cl::Program* createProgram(std::string kernelFileName) {
-    cl::Program* program =
-      new cl::Program(*engpar_ocl_context, util::loadProgram(kernelFileName));
 
-    int err = 0; 
-    try { 
-      program->build("-cl-opt-disable -Werror");
-    } catch (cl::Error error) {
-      std::cerr << "OpenCL Build Error..." << std::endl;
+  cl::Program* createProgram(std::string kernelFileName) {
+    std::string ext = kernelFileName.substr(kernelFileName.find_last_of(".") + 1);
+    fprintf(stderr, "extension %s\n", ext.c_str());
+    cl::Program* program;
+    cl_int err = 0;
+    if( ext == "cl" ) {
+      program =
+        new cl::Program(*engpar_ocl_context, util::loadProgram(kernelFileName));
+      try {
+        program->build("-cl-opt-disable -Werror");
+      } catch (cl::Error error) {
+        std::cerr << "OpenCL Build Error..." << std::endl;
+        err = 1;
+      }
+      printBuildLogAndOpts(program);
+    } else if ( ext == "aocx" ) {
+      std::vector<cl::Device> devices;
+      devices.push_back(*engpar_ocl_device);
+      std::string bytes = util::loadProgram(kernelFileName);
+      cl::Program::Binaries bin;
+      typedef std::pair<const void*, ::size_t> binPair;
+      bin.push_back( binPair(bytes.c_str(),bytes.length()) );
+      std::vector<cl_int> binStatus;
+      program =
+        new cl::Program(*engpar_ocl_context, devices, bin, &binStatus, &err);
+
+      assert(binStatus.size() == 1);
+      assert(binStatus[0] == CL_SUCCESS);
+    } else {
+      if(!PCU_Comm_Self())
+        fprintf(stderr, "uknown kernel file extension... exiting\n");
       err = 1;
     }
-    printBuildLogAndOpts(program);
     if ( err ) exit(EXIT_FAILURE);
     return program;
   }
@@ -84,8 +106,8 @@ namespace engpar {
       inputs object
   */
   int bfs_pull_OpenCL(agi::Ngraph* g, agi::etype t,agi::lid_t start_seed,
-               int start_depth, visitFn, Inputs* in) {
-    cl::Program* program = createProgram("bfskernel.cl");
+               int start_depth, visitFn, Inputs* in, std::string kernel) {
+    cl::Program* program = createProgram(kernel);
 
     cl::make_kernel
       <cl::Buffer,        //degreeList
