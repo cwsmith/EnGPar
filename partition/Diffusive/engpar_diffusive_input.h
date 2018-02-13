@@ -1,6 +1,7 @@
 #ifndef __ENGPAR_DIFFUSIVE_INPUT_H__
 #define __ENGPAR_DIFFUSIVE_INPUT_H__
 
+#include <string>
 #include <ngraph.h>
 #include "../engpar_input.h"
 namespace engpar {
@@ -80,6 +81,11 @@ namespace engpar {
      */
     bool bfsPullOpenCL;
 
+    /** \brief path to the OpenCL kernel
+     *
+     * defaults to an empty string
+     */
+    std::string kernel;
   };
 }
 

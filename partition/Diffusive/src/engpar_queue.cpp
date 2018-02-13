@@ -262,7 +262,7 @@ namespace engpar {
     } else if (input->bfsPullOpenCL) {
 #ifdef ENGPAR_OPENCL_ENABLED
       bfsmethod="opencl";
-      bfs_pull_OpenCL(g,t,0,0,depth_visit,in1);
+      bfs_pull_OpenCL(g,t,0,0,depth_visit,in1,input->kernel);
 #else 
       fprintf(stderr, "bfsPullOpenCL requested, but OpenCL is not enabled!"
                       "Rerun CMake with \'ENABLE_OPENCL=ON\'.\n");

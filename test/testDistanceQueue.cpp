@@ -14,8 +14,10 @@ extern cl::Context* engpar_ocl_context;
 extern cl::CommandQueue* engpar_ocl_queue;
 extern cl::Device* engpar_ocl_device;
 
+
 void parseDriverArguments(int argc, char *argv[],
-    cl_uint *deviceIndex, int* bfsmode, std::string& graphFileName) {
+    cl_uint *deviceIndex, int* bfsmode, std::string& graphFileName,
+    std::string& kernelFileName) {
   for (int i = 1; i < argc; i++) {
     if (!strcmp(argv[i], "--list")) {
       // Get list of devices
@@ -33,6 +35,12 @@ void parseDriverArguments(int argc, char *argv[],
         std::cout << "\n";
       }
       exit(0);
+    } else if (!strcmp(argv[i], "--kernel")) {
+      if (++i >= argc) {
+        std::cout << "Invalid kernel\n";
+        exit(1);
+      }
+      kernelFileName = std::string(argv[i]);
     } else if (!strcmp(argv[i], "--device")) {
       if (++i >= argc || !parseUInt(argv[i], deviceIndex)) {
         std::cout << "Invalid device index\n";
@@ -56,6 +64,7 @@ void parseDriverArguments(int argc, char *argv[],
       std::cout << "      --graph       <pathToGraphFile.bgd>" << std::endl;
       std::cout << "      --list               List available devices\n";
       std::cout << "      --device     INDEX   Select device at INDEX\n";
+      std::cout << "      --kernelBinary  <pathToKernelBinary.aocx> Specify the path to the percompiled kernel\n";
       std::cout << "\n";
       exit(0);
     }
@@ -69,10 +78,11 @@ int main(int argc, char* argv[]) {
   int bfsmode = 0;
   agi::Ngraph* g;
   std::string graphFileName("");
+  std::string kernelFileName("");
   try
   {
     cl_uint deviceIndex = 0;
-    parseDriverArguments(argc,argv,&deviceIndex,&bfsmode,graphFileName);
+    parseDriverArguments(argc,argv,&deviceIndex,&bfsmode,graphFileName,kernelFileName);
 
     // Get list of devices
     std::vector<cl::Device> devices;
@@ -120,6 +130,7 @@ int main(int argc, char* argv[]) {
   engpar::Input* input = engpar::createDiffusiveInput(g,0);
   engpar::DiffusiveInput* inp = static_cast<engpar::DiffusiveInput*>(input);
 
+  inp->kernel = kernelFileName;
   inp->bfsPush = inp->bfsPull = inp->bfsPullOpenCL = false;
   if (bfsmode == 0) //push
     inp->bfsPush = true;
