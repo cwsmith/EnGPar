@@ -47,6 +47,30 @@ make
 ctest
 ```
 
+### Build with OpenCL Support ###
+
+A hello world and nbody example from here:
+http://www.iwocl.org/iwocl-2017/advanced-hands-on-opencl-tutorial/
+runs on turtle and blockade.
+
+My working repo is here:
+https://bitbucket.org/c_smith/iwocl_2016_test
+
+## blockade
+
+```
+cd /users/cwsmith/develop/openclTutorial/iwocl_2016_test/exercises/DeviceInfo
+make
+```
+
+## OSX 
+
+My macbook has an Intel i5 processor with integrated graphics.  Interestingly, opencl just seems to work out of the box.  Maybe installing xcode provides this.
+
+Apple only supports work group sizes of 1 on the CPU.  This is a known issue that has persisted for several years. (Simon Smith from University of Bristol provided this info).
+
+## Ruth (JLSE)
+
 ### Website ### 
 
 http://scorec.github.io/EnGPar/
