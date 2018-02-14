@@ -48,19 +48,15 @@ ctest
 
 ### Build with OpenCL Support ###
 
-A hello world and nbody example from here:
-http://www.iwocl.org/iwocl-2017/advanced-hands-on-opencl-tutorial/
-runs on turtle and blockade.
+To enable a build that uses the OpenCL BFS kernel start by passing `-DENABLE_OPENCL=On` to cmake.  This in turn calls [find_package(opencl)](https://cmake.org/cmake/help/v3.10/module/FindOpenCL.html).  If this fails then you'll need to locate the directory where `libOpenCL.so` and the C header `CL/cl.h` are, and set `CMAKE_PREFIX_PATH` to include those paths.
 
-My working repo is here:
-https://bitbucket.org/c_smith/iwocl_2016_test
+Next, we will need the C++ host API wrapper header `cl.hpp`.  If the header is not found, then pass `-DOPENCL_HPP_DIR=/path/to/directory/containing/cl.hpp`.
+
+Some system specific notes are below on where to find the required libraries and headers.
 
 ## blockade
 
-```
-cd /users/cwsmith/develop/openclTutorial/iwocl_2016_test/exercises/DeviceInfo
-make
-```
+Blockade has 
 
 ## OSX 
 
@@ -68,7 +64,37 @@ My macbook has an Intel i5 processor with integrated graphics.  Interestingly, o
 
 Apple only supports work group sizes of 1 on the CPU.  This is a known issue that has persisted for several years. (Simon Smith from University of Bristol provided this info).
 
-## Ruth (JLSE)
+## Ruth (JLSE) ##
+
+The following environment is used for building and running:
+
+```
+#altera/intel SDK and 'aoc' compiler for the kernel
+source  /soft/fpga/altera/pro/16.0.2.222/aoc-env.sh
+
+#mpi
+export PATH=$PATH:/soft/libraries/mpi/mpich-gcc_4.4.7-3.1.2/bin
+
+#cmake
+export PATH=/home/cwsmith/ruth-software/cmake-3.10.2/install/bin:$PATH
+
+#opencl paths
+export CMAKE_PREFIX_PATH=\
+$ALTERAOCLSDKROOT/host/linux64/lib:\
+$ALTERAOCLSDKROOT/host/include:\
+$ALTERAOCLSDKROOT/board/nalla_pcie/linux64/lib/:\
+$ALTERAOCLSDKROOT/host/linux64/lib/:\
+$CMAKE_PREFIX_PATH
+
+#pumi - needed for PCU
+export PUMI_INSTALL_DIR=/home/cwsmith/build-core-ruth/install
+```
+
+The kernel is built using the `aoc` compiler
+```
+aoc /path/to/engpar/partition/Diffusion/src/bfskernel.cl
+```
+this will take more than five hours and consume around 1.7GB.
 
 ### Website ### 
 
