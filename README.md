@@ -51,14 +51,30 @@ ctest
 
 To enable a build that uses the OpenCL BFS kernel start by passing `-DENABLE_OPENCL=On` to cmake.  This in turn calls [find_package(opencl)](https://cmake.org/cmake/help/v3.10/module/FindOpenCL.html).  If this fails then you'll need to locate the directory where `libOpenCL.so` and the C header `CL/cl.h` are, and set `CMAKE_PREFIX_PATH` to include those paths.
 
-Next, we will need the C++ host API wrapper header `cl.hpp`.  If the header is not found, then pass 
-`-DOPENCL_HPP_DIR=/path/to/directory/containing/cl.hpp`.
+Next, we will need the C++ host API wrapper header `cl.hpp`.  If the header is not found, 
+then pass `-DOPENCL_HPP_DIR=/path/to/directory/containing/cl.hpp` to cmake.
 
 Some system specific notes are below on where to find the required libraries and headers.
 
 ## blockade (SCOREC)
 
-Blockade has 
+There a no modules on blockade yet so I have installed my own mpi and cmake.  They are added to the `PATH` with the following environment file, `blockade.env`:
+
+```
+export PATH=/users/cwsmith/software/mpich-3.2.1/install/bin:$PATH
+export PATH=/users/cwsmith/software/cmake-3.10.1/install/bin:$PATH
+```
+
+The OpenCL libraries for running on blockade's NVIDIA GPU will be found if `CMAKE_PREFIX_PATH` is set as follows:
+
+```
+export CMAKE_PREFIX_PATH=\
+/usr/local/cuda/targets/x86_64-linux/:\
+/usr/local/cuda/targets/x86_64-linux/include/:\
+/usr/local/cuda/targets/x86_64-linux/include/CL:\
+$CMAKE_PREFIX_PATH
+```
+
 
 ## OSX 
 
