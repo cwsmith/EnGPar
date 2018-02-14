@@ -114,7 +114,7 @@ aoc /path/to/engpar/partition/Diffusion/src/bfskernel.cl
 ```
 this will take more than five hours and consume around 1.7GB.
 
-Compiling the host code requires linking against three additional libraries provided by Altera/Intel: `nalla_pcie_mmd`, `alteracl`, and `elf`.  Passing the flag `-DENABLE_OPENCL_Altera=On` to cmake will search for these libraries in the paths listed in `CMAKE_PREFIX_PATH` set in the environment `ruth.env` file above.
+Compiling the host code requires linking against three additional libraries provided by Altera/Intel: `nalla_pcie_mmd`, `alteracl`, and `elf`.  Passing the flag `-DENABLE_OPENCL_Altera=On` to cmake will search for these libraries in the paths listed in `CMAKE_PREFIX_PATH` set in the environment `ruth.env` file above and add them to the link link in the required order.
 
 ### Website
 
