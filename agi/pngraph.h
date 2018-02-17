@@ -21,18 +21,6 @@ class PNgraph {
    */
   bool isHyperGraph;
 
-  /** \brief A flag for if the SellCSigma layout is being used
-   */
-  bool isSellCSigma;;
-
-  /** \brief The number of vertex chunks when using SellCSigma
-   */
-  int chunk_size;
-
-  /** \brief The number of vertex chunks when using SellCSigma
-   */
-  int num_vtx_chunks;
-
   /** \brief The number of edge types
    */
   int num_types;
@@ -151,14 +139,31 @@ class PNgraph {
 
   map_t edge_mapping[MAX_TYPES];
 
-  // \endcond
-  // \cond DEV
   /** \brief A mapping from local id to global id for edges of each type
    *
    * size = num_local_edges
    */
   gid_t* edge_unmap[MAX_TYPES];  
 
+
+  //SlimCSigma variables
+
+  /** \brief A flag for if the SellCSigma layout is being used
+   */
+  bool isSellCSigma;;
+
+  /** \brief The number of vertex chunks when using SellCSigma
+   */
+  int chunk_size;
+
+  /** \brief The number of vertex chunks when using SellCSigma
+   */
+  int num_vtx_chunks;
+
+  // \endcond
+  // \cond DEV
+
+  
   GraphVertex* getVertex(lid_t lid) {
     return reinterpret_cast<GraphVertex*>( toPtr(lid+1) );
   }
