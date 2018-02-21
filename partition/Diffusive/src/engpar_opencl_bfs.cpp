@@ -43,7 +43,7 @@ namespace {
       program =
         new cl::Program(*engpar_ocl_context, util::loadProgram(kernelFileName));
       try {
-        program->build("-cl-opt-disable -Werror");
+        program->build("-Werror");
       } catch (cl::Error error) {
         std::cerr << "OpenCL Build Error..." << std::endl;
         err = 1;
