@@ -1,19 +1,22 @@
 #!/bin/bash
 usage() {
-  echo "Usage: $0 <device> <bfsmode> </absolute/path/to/graph/file.bgd> <debug=on|off> <oclgrind=on|off>"
+  echo "Usage: $0 <kernel> <device> <bfsmode> </absolute/path/to/graph/file.bgd> <debug=on|off> <oclgrind=on|off>"
   ./testDistanceQueue --help
   ./testDistanceQueue --list
 }
-device=$1
-bfsmode=$2
-graph=$3
-debug=$4
-grind=$5
+kernel=$1
+device=$2
+bfsmode=$3
+graph=$4
+debug=$5
+grind=$6
 
 cd test
-cp ~/develop/EnGPar/partition/Diffusive/src/bfskernel.cl .
+cp ~/develop/EnGPar/partition/Diffusive/src/*.cl .
 
-[ $# -ne 5 ] && usage && exit 1
+[ $# -ne 6 ] && usage && exit 1
+
+[ ! -e $kernel ] && usage && exit 1
 
 [[ "off" != "$debug" &&
    "on" != "$debug" ]] &&
@@ -45,7 +48,7 @@ if [[ "none" != "$graph" && -e "${graph}_0.bgd" ]]; then
   grapharg="--graph ${graph}"
 fi
 
-${!oclgrind} ${!gdb} ./testDistanceQueue ${device} ${grapharg} --bfsmode ${bfsmode}
+${!oclgrind} ${!gdb} ./testDistanceQueue --kernel $kernel ${device} ${grapharg} --bfsmode ${bfsmode}
 
 set +x
 
