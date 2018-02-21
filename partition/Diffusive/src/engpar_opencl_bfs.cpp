@@ -134,13 +134,18 @@ namespace engpar {
     // copy the graph CSRs to the device
     ////////
     // vert-to-nets
+    agi::lid_t edgeListSize = 0;
+    for (agi::lid_t i =0; i < pg->num_vtx_chunks;i++)
+      edgeListSize+=(pg->degree_list[t][i+1]-pg->degree_list[t][i]);
+    edgeListSize*=pg->chunk_size;
+    printf("CAKE edgeListSize %ld\n", edgeListSize);
     cl::Buffer* d_degreeList = copyToDevice<agi::lid_t>(
         pg->degree_list[t],
-        pg->num_local_verts+1,
+        pg->num_vtx_chunks+1,
         CL_MEM_READ_ONLY);
     cl::Buffer* d_edgeList = copyToDevice<agi::lid_t>(
         pg->edge_list[t],
-        pg->num_local_pins[t],
+        edgeListSize,
         CL_MEM_READ_ONLY);
     ////////
     // vertex depth array
