@@ -92,6 +92,12 @@ namespace engpar {
      * defaults to an empty string
      */
     std::string kernel;
+
+    /** \brief size of SCG chunk
+     *
+     * defaults to 1
+     */
+    int chunkSize;
   };
 }
 

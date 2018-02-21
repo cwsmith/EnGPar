@@ -16,8 +16,8 @@ extern cl::Device* engpar_ocl_device;
 
 
 void parseDriverArguments(int argc, char *argv[],
-    cl_uint *deviceIndex, int* bfsmode, std::string& graphFileName,
-    std::string& kernelFileName) {
+    cl_uint *deviceIndex, int* bfsmode, int* chunkSize,
+    std::string& graphFileName, std::string& kernelFileName) {
   for (int i = 1; i < argc; i++) {
     if (!strcmp(argv[i], "--list")) {
       // Get list of devices
@@ -35,6 +35,12 @@ void parseDriverArguments(int argc, char *argv[],
         std::cout << "\n";
       }
       exit(0);
+    } else if (!strcmp(argv[i], "--chunkSize")) {
+      if (++i >= argc) {
+        std::cout << "Invalid chunkSize\n";
+        exit(1);
+      }
+      *chunkSize = atoi(argv[i]);
     } else if (!strcmp(argv[i], "--kernel")) {
       if (++i >= argc) {
         std::cout << "Invalid kernel\n";
@@ -61,6 +67,7 @@ void parseDriverArguments(int argc, char *argv[],
     } else if (!strcmp(argv[i], "--help") || !strcmp(argv[i], "-h")) {
       std::cout << "\n";
       std::cout << "      --bfsmode     [0|1|2|3]   0:push, 1:pull, 2:csrOpenCL 3:scgOpenCL" << std::endl;
+      std::cout << "      --chunkSize   [1:N]       size of SCG chunks, only applies to bfsmode=3" << std::endl;
       std::cout << "      --graph       <pathToGraphFile.bgd>" << std::endl;
       std::cout << "      --list               List available devices\n";
       std::cout << "      --device     INDEX   Select device at INDEX\n";
@@ -76,13 +83,14 @@ int main(int argc, char* argv[]) {
   EnGPar_Initialize();
 
   int bfsmode = 0;
+  int chunkSize = 1;
   agi::Ngraph* g;
   std::string graphFileName("");
   std::string kernelFileName("");
   try
   {
     cl_uint deviceIndex = 0;
-    parseDriverArguments(argc,argv,&deviceIndex,&bfsmode,graphFileName,kernelFileName);
+    parseDriverArguments(argc,argv,&deviceIndex,&bfsmode,&chunkSize,graphFileName,kernelFileName);
 
     // Get list of devices
     std::vector<cl::Device> devices;
@@ -130,6 +138,7 @@ int main(int argc, char* argv[]) {
   engpar::Input* input = engpar::createDiffusiveInput(g,0);
   engpar::DiffusiveInput* inp = static_cast<engpar::DiffusiveInput*>(input);
 
+  inp->chunkSize = chunkSize;
   inp->kernel = kernelFileName;
   inp->bfsPush = inp->bfsPull = inp->bfsCsrOpenCL = inp->bfsScgOpenCL = false;
   if (bfsmode == 0)

@@ -17,6 +17,7 @@ namespace engpar {
     bfsCsrOpenCL = false;
     bfsScgOpenCL = false;
     kernel = "";
+    chunkSize = 1;
   }
 
   void DiffusiveInput::addPriority(int type, double tolerance) {
