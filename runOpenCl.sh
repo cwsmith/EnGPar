@@ -12,7 +12,6 @@ debug=$5
 grind=$6
 
 cd test
-cp ~/develop/EnGPar/partition/Diffusive/src/*.cl .
 
 [ $# -ne 6 ] && usage && exit 1
 
@@ -33,7 +32,6 @@ gdb_on="gdb --args"
 gdb_off=""
 gdb=gdb_${debug}
 
-export PATH=$PATH:/Users/cwsmith/software/Oclgrind/build/install/bin
 oclgrind_on="oclgrind"
 oclgrind_off=""
 oclgrind=oclgrind_${grind}
