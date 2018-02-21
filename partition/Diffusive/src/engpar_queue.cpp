@@ -252,6 +252,7 @@ namespace engpar {
     //Run first BFS using depth visit operation
     //need to check that exactly one of these is set... or use a better
     // mechanism
+    agi::Ngraph* scg;
     std::string bfsmethod;
     double t0 = PCU_Time();
     if (input->bfsPush) {
@@ -273,7 +274,7 @@ namespace engpar {
       bfsmethod="scgopencl";
       agi::lid_t C = 4;
       agi::lid_t sigma = g->numLocalVtxs();
-      agi::Ngraph* scg = ssg::convertFromAGI(g,C,sigma);
+      scg = ssg::convertFromAGI(g,C,sigma);
       bfs_pull_OpenCL(scg,t,0,0,depth_visit,in1,input->kernel);
 #else
       fprintf(stderr, "bfsScgOpenCL requested, but OpenCL is not enabled!"
@@ -288,9 +289,16 @@ namespace engpar {
       printf("outer %s bfs time (s) %f\n", bfsmethod.c_str(), PCU_Time()-t0);
 
     if( !PCU_Comm_Self() ) {
-      for(int i=0; i<pg->num_local_edges[t]; i++)
-        printf("edge %d depth %d\n", i, in1->visited[i]);
+      agi::PNgraph* graph = pg;
+      if( input->bfsScgOpenCL )
+        graph = scg->publicize();
+      for(int i=0; i < graph->num_local_edges[t]; i++) {
+        gid_t edge = graph->edge_unmap[t][i];
+        printf("edge gid %d depth %d\n", edge, in1->visited[i]);
+      }
     }
+    if( input->bfsScgOpenCL )
+      agi::destroyGraph(scg);
       
     //Setup inputs to second BFS traversal
     Inputs* in2 = new Inputs;
