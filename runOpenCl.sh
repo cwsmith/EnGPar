@@ -15,7 +15,7 @@ cd test
 
 [ $# -ne 6 ] && usage && exit 1
 
-[ ! -e $kernel ] && usage && exit 1
+[ ! -e $kernel ] && echo "kernel path '$kernel' does not exist" && usage && exit 1
 
 [[ "off" != "$debug" &&
    "on" != "$debug" ]] &&
