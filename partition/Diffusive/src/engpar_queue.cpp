@@ -3,6 +3,7 @@
 #include "engpar_bfsvisitfn.h"
 #include <PCU.h>
 #include "engpar_opencl_config.h"
+#include "sellCSigma.h"
 #ifdef ENGPAR_OPENCL_ENABLED
   #include "engpar_opencl_bfs.h"
 #endif
@@ -259,12 +260,23 @@ namespace engpar {
     } else if (input->bfsPull) {
       bfsmethod="pull";
       bfs_pull(g,t,0,0,depth_visit,in1);
-    } else if (input->bfsPullOpenCL) {
+    } else if (input->bfsCsrOpenCL) {
 #ifdef ENGPAR_OPENCL_ENABLED
-      bfsmethod="opencl";
+      bfsmethod="csropencl";
       bfs_pull_OpenCL(g,t,0,0,depth_visit,in1,input->kernel);
-#else 
-      fprintf(stderr, "bfsPullOpenCL requested, but OpenCL is not enabled!"
+#else
+      fprintf(stderr, "bfsCsrOpenCL requested, but OpenCL is not enabled!"
+                      "Rerun CMake with \'ENABLE_OPENCL=ON\'.\n");
+#endif
+    } else if (input->bfsScgOpenCL) {
+#ifdef ENGPAR_OPENCL_ENABLED
+      bfsmethod="scgopencl";
+      agi::lid_t C = 4;
+      agi::lid_t sigma = g->numLocalVtxs();
+      agi::Ngraph* scg = ssg::convertFromAGI(g,C,sigma);
+      bfs_pull_OpenCL(scg,t,0,0,depth_visit,in1,input->kernel);
+#else
+      fprintf(stderr, "bfsScgOpenCL requested, but OpenCL is not enabled!"
                       "Rerun CMake with \'ENABLE_OPENCL=ON\'.\n");
 #endif
     } else {

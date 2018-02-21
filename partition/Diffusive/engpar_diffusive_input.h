@@ -75,11 +75,17 @@ namespace engpar {
      */
     bool bfsPull;
 
-    /** \brief use the pull bfs written in OpenCL
+    /** \brief use the pull bfs on the CSR written in OpenCL
      *
      * defaults to false
      */
-    bool bfsPullOpenCL;
+    bool bfsCsrOpenCL;
+
+    /** \brief use the pull bfs on the Sell-C-Sigma written in OpenCL
+     *
+     * defaults to false
+     */
+    bool bfsScgOpenCL;
 
     /** \brief path to the OpenCL kernel
      *

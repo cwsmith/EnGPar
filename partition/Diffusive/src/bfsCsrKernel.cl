@@ -7,7 +7,7 @@ bool visited(lid_t edge, global int* depth) {
     return (depth[edge] != -1);
 }
 
-kernel void bfskernel(global long* degreeList,
+kernel void bfsCsrKernel(global long* degreeList,
                      global long* edgeList,
                      global int* depth,
                      global char* changes,
