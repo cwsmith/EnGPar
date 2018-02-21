@@ -244,7 +244,8 @@ namespace engpar {
       delete in1;
       return q;
     }
-    
+
+
     in1->visited = new int[pg->num_local_edges[t]];
     for (agi::lid_t i=0;i<pg->num_local_edges[t];i++) {
       in1->visited[i] = -1;
@@ -271,10 +272,18 @@ namespace engpar {
 #endif
     } else if (input->bfsScgOpenCL) {
 #ifdef ENGPAR_OPENCL_ENABLED
+      //create array of seed global ids
+      agi::gid_t* seedGids = new agi::gid_t[in1->numSeeds];
+      for(int i=0; i < in1->numSeeds; i++)
+        seedGids[i] = pg->edge_unmap[t][ in1->seeds[i] ];
       bfsmethod="scgopencl";
       agi::lid_t C = 4;
       agi::lid_t sigma = g->numLocalVtxs();
       scg = ssg::convertFromAGI(g,C,sigma);
+      agi::PNgraph* pscg = scg->publicize();
+      //convert the seedGids back to local ids using the SCG map
+      for(int i=0; i < in1->numSeeds; i++)
+        in1->seeds[i] = pscg->edge_mapping[t][ seedGids[i] ];
       bfs_pull_OpenCL(scg,t,0,0,depth_visit,in1,input->kernel);
 #else
       fprintf(stderr, "bfsScgOpenCL requested, but OpenCL is not enabled!"
