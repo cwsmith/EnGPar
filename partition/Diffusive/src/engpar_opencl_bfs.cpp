@@ -105,8 +105,91 @@ namespace engpar {
       the visit function
       inputs object
   */
-  int bfs_pull_OpenCL(agi::Ngraph* g, agi::etype t,agi::lid_t start_seed,
-               int start_depth, visitFn, Inputs* in, std::string kernel) {
+  int bfsPullOpenclScg(agi::PNgraph* pg, agi::etype t,agi::lid_t start_seed,
+               int start_depth, Inputs* in, std::string kernel) {
+    cl::Program* program = createProgram(kernel);
+
+    cl::make_kernel
+      <cl::Buffer,        //degreeList
+       cl::Buffer,        //edgeList
+       cl::Buffer,        //depth
+       cl::Buffer,        //update flag
+       cl_int,            //num verts
+       cl_int>            //bfs level
+      bfsScgKernel(*program, "bfsScgKernel");
+
+    double t0=PCU_Time();
+    // initialize the visited/depth array
+    for (agi::lid_t i=start_seed;i<in->numSeeds;i++) 
+      in->visited[in->seeds[i]] = start_depth;
+
+    printf("host: numVtx numEdges numPins numSeeds startDepth "
+           "%ld %ld %ld %ld %d\n",
+           pg->num_local_verts,
+           pg->num_local_edges[t],
+           pg->num_local_pins[t],
+           in->numSeeds,
+           start_depth);
+    ////////
+    // copy the graph CSRs to the device
+    ////////
+    // vert-to-nets
+    cl::Buffer* d_degreeList = copyToDevice<agi::lid_t>(
+        pg->degree_list[t],
+        pg->num_local_verts+1,
+        CL_MEM_READ_ONLY);
+    cl::Buffer* d_edgeList = copyToDevice<agi::lid_t>(
+        pg->edge_list[t],
+        pg->num_local_pins[t],
+        CL_MEM_READ_ONLY);
+    ////////
+    // vertex depth array
+    ////////
+    cl::Buffer* d_depth = copyToDevice<int>(
+        in->visited,
+        pg->num_local_edges[t],
+        CL_MEM_READ_WRITE);
+
+    cl::NDRange global(pg->num_vtx_chunks*pg->chunk_size);
+    cl::NDRange local(pg->chunk_size);
+
+    int maxLevel=1000;
+    int level=start_depth;
+    char h_changes;
+    do { 
+      h_changes = false;
+      // run the kernel once for each chunk
+      cl::Buffer* d_changes = copyToDevice<char>(
+          &h_changes,
+          1,
+          CL_MEM_WRITE_ONLY);
+      bfsScgKernel(cl::EnqueueArgs(*engpar_ocl_queue, global, local),
+          *d_degreeList, *d_edgeList, *d_depth, *d_changes, pg->num_local_verts, level);
+      copyFromDevice<char>(d_changes, &h_changes, 1);
+      level++;
+    } while(h_changes && level < maxLevel);
+
+    copyFromDevice<int>(d_depth, in->visited, pg->num_local_edges[t]);
+
+    // TODO: reconstruct seeds array from depth array
+    //  the serial implementation computes the seeds array on the fly, but that
+    //  is hard to do in a parallel implementation without using atomics
+    // The seeds array contains contiguous groups of edges with the same depth
+    // in ascending order (first group is depth 1).
+
+    delete d_degreeList;
+    delete d_edgeList;
+    delete d_depth;
+    delete program;
+    if(!PCU_Comm_Self())
+      printf("opencl bfs time (s) %f\n", PCU_Time()-t0);
+
+
+    return 0;
+  }
+
+  int bfsPullOpenclCsr(agi::PNgraph* pg, agi::etype t,agi::lid_t start_seed,
+               int start_depth, Inputs* in, std::string kernel) {
     cl::Program* program = createProgram(kernel);
 
     cl::make_kernel
@@ -115,11 +198,10 @@ namespace engpar {
        cl::Buffer,        //depth
        cl::Buffer,        //update flag
        cl_int>            //bfs level
-      bfsPullKernel(*program, "bfskernel");
+      bfsCsrKernel(*program, "bfsCsrKernel");
 
     double t0=PCU_Time();
     // initialize the visited/depth array
-    agi::PNgraph* pg = g->publicize();
     for (agi::lid_t i=start_seed;i<in->numSeeds;i++) 
       in->visited[in->seeds[i]] = start_depth;
 
@@ -157,11 +239,12 @@ namespace engpar {
     char h_changes;
     do { 
       h_changes = false;
+      // run the kernel once for each chunk
       cl::Buffer* d_changes = copyToDevice<char>(
           &h_changes,
           1,
           CL_MEM_WRITE_ONLY);
-      bfsPullKernel(cl::EnqueueArgs(*engpar_ocl_queue, global),
+      bfsCsrKernel(cl::EnqueueArgs(*engpar_ocl_queue, global),
           *d_degreeList, *d_edgeList, *d_depth, *d_changes, level);
       copyFromDevice<char>(d_changes, &h_changes, 1);
       level++;
@@ -181,6 +264,22 @@ namespace engpar {
     delete program;
     if(!PCU_Comm_Self())
       printf("opencl bfs time (s) %f\n", PCU_Time()-t0);
+  }
+
+  int bfs_pull_OpenCL(agi::Ngraph* g, agi::etype t,agi::lid_t start_seed,
+               int start_depth, visitFn, Inputs* in, std::string kernel) {
+    agi::PNgraph* pg = g->publicize();
+    if( ! pg->isHyperGraph ) {
+      fprintf(stderr, "ERROR: %s requires a hypergraph... exiting\n", __func__);
+      exit(EXIT_FAILURE);
+    }
+    int err = 1;
+    if( pg->isSellCSigma ) {
+      err = bfsPullOpenclScg(pg,t,start_seed,start_depth,in,kernel);
+    } else {
+      err = bfsPullOpenclCsr(pg,t,start_seed,start_depth,in,kernel);
+    }
+    return err;
   }
 
 }

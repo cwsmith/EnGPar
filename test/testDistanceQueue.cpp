@@ -60,7 +60,7 @@ void parseDriverArguments(int argc, char *argv[],
       *bfsmode = atoi(argv[i]);
     } else if (!strcmp(argv[i], "--help") || !strcmp(argv[i], "-h")) {
       std::cout << "\n";
-      std::cout << "      --bfsmode     [0|1|2]   0:push, 1:pull, 2:pullOpenCL" << std::endl;
+      std::cout << "      --bfsmode     [0|1|2|3]   0:push, 1:pull, 2:csrOpenCL 3:scgOpenCL" << std::endl;
       std::cout << "      --graph       <pathToGraphFile.bgd>" << std::endl;
       std::cout << "      --list               List available devices\n";
       std::cout << "      --device     INDEX   Select device at INDEX\n";
@@ -131,13 +131,15 @@ int main(int argc, char* argv[]) {
   engpar::DiffusiveInput* inp = static_cast<engpar::DiffusiveInput*>(input);
 
   inp->kernel = kernelFileName;
-  inp->bfsPush = inp->bfsPull = inp->bfsPullOpenCL = false;
-  if (bfsmode == 0) //push
+  inp->bfsPush = inp->bfsPull = inp->bfsCsrOpenCL = inp->bfsScgOpenCL = false;
+  if (bfsmode == 0)
     inp->bfsPush = true;
   else if (bfsmode == 1)
     inp->bfsPull = true;
   else if (bfsmode == 2)
-    inp->bfsPullOpenCL = true;
+    inp->bfsCsrOpenCL = true;
+  else if (bfsmode == 3)
+    inp->bfsScgOpenCL = true;
   else {
     printf("invalid bfsmode specified... exiting\n");
     exit(EXIT_FAILURE);

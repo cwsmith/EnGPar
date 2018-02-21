@@ -21,7 +21,8 @@ if(OpenCL_FOUND)
   set(ENGPAR_SOURCES
     ${ENGPAR_SOURCES}
     src/engpar_opencl_bfs.cpp)
-  file(COPY "src/bfskernel.cl" DESTINATION "${CMAKE_BINARY_DIR}/test")
+  file(COPY "src/bfsScgKernel.cl" DESTINATION "${CMAKE_BINARY_DIR}/test")
+  file(COPY "src/bfsCsrKernel.cl" DESTINATION "${CMAKE_BINARY_DIR}/test")
   set(kernel bfskernel.cl)
   set(kernelSrc src/${kernel})
   set(kernelDest test/${kernel})
@@ -40,7 +41,7 @@ target_include_directories(diffusive PUBLIC
   $<INSTALL_INTERFACE:include>
   )
 
-target_link_libraries(diffusive agi)
+target_link_libraries(diffusive agi ssg)
 
 if(OpenCL_FOUND)
   target_link_libraries(diffusive OpenCL::OpenCL)

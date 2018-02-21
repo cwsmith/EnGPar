@@ -14,7 +14,8 @@ namespace engpar {
       useDistanceQueue = false;
     bfsPush = false;
     bfsPull = true;
-    bfsPullOpenCL = true;
+    bfsCsrOpenCL = false;
+    bfsScgOpenCL = false;
     kernel = "";
   }
 
