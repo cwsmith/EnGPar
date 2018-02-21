@@ -149,7 +149,7 @@ class PNgraph {
 
   /** \brief A flag for if the SellCSigma layout is being used
    */
-  bool isSellCSigma;;
+  bool isSellCSigma;
 
   /** \brief The length of the chunks when using SellCSigma
    */
