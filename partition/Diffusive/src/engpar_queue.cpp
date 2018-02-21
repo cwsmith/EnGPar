@@ -277,7 +277,8 @@ namespace engpar {
       for(int i=0; i < in1->numSeeds; i++)
         seedGids[i] = pg->edge_unmap[t][ in1->seeds[i] ];
       bfsmethod="scgopencl";
-      agi::lid_t C = 4;
+      agi::lid_t C = input->chunkSize;
+      printf("scg chunk size %d\n", C);
       agi::lid_t sigma = g->numLocalVtxs();
       scg = ssg::convertFromAGI(g,C,sigma);
       agi::PNgraph* pscg = scg->publicize();
