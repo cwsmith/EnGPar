@@ -37,32 +37,35 @@ kernel void bfsScgKernel(global long* degreeList,
   const lid_t firstEdgeIdx = chunkStart+lid;
   const lid_t lastEdgeIdx = firstEdgeIdx+chunkSize;
 
+  // this is a hack for all-tet meshes
+  lid_t edges[4]; 
+  int depths[4]; 
+  int i=0;
+  for (lid_t j = firstEdgeIdx; j < lastEdgeIdx; j += chunkLength)
+    edges[i++] = edgeList[j];
+  for (lid_t j = 0; j < 4; j++)
+    depths[j] = depth[edges[j]];
+
   // loop through the edges adjacent to the vertex and find
   // the one with the smallest depth
   lid_t minDepthEdge = -1;
   int minDepth = LARGE_DEPTH;
-  for (lid_t j = firstEdgeIdx; j < lastEdgeIdx; j += chunkLength) {
-    const lid_t edge = edgeList[j];
-    // skip padded entries/edges
-    if (edge == -1) continue;
-    if (visited(edge,depth,&depthChecks) ) {
-      if (depth[edge] < minDepth) {
+  for (lid_t j = 0; j < 4; j++) {
+    if ( depths[j] != -1 ) { // visited
+      if (depths[j] < minDepth) {
         // this edge has the lowest depth of those adjacent to vtx 'gid'
-        minDepthEdge = edge;
-        minDepth = depth[edge];
+        minDepthEdge = j;
+        minDepth = depths[j];
       }
     }
   }
   if (minDepth == level) {
     // a visited edge was found - loop through the adjacent 
     // edges again and set the depth of unvisited edges
-    for (lid_t j = firstEdgeIdx; j < lastEdgeIdx; j += chunkLength) {
-      const lid_t edge = edgeList[j];
-      // skip padded entries/edges
-      if (edge == -1) continue;
-      if (!visited(edge,depth,&depthChecks)) {
-        depth[edge] = minDepth+1;
-        atomic_inc(frontSize);
+    for (lid_t j = 0; j < 4; j++) {
+      if ( depths[j] == -1 ) { // !visited
+        depth[edges[j]] = minDepth+1;
+        *frontSize = 1;
       }
     }
   }
