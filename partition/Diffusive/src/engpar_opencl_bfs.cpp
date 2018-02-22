@@ -138,7 +138,6 @@ namespace engpar {
     for (agi::lid_t i =0; i < pg->num_vtx_chunks;i++)
       edgeListSize+=(pg->degree_list[t][i+1]-pg->degree_list[t][i]);
     edgeListSize*=pg->chunk_size;
-    printf("CAKE edgeListSize %ld\n", edgeListSize);
     cl::Buffer* d_degreeList = copyToDevice<agi::lid_t>(
         pg->degree_list[t],
         pg->num_vtx_chunks+1,
