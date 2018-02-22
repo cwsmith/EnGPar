@@ -2,10 +2,11 @@
 
 typedef uint lid_t;
 
-bool visited(lid_t edge, global int* depth);
+bool visited(lid_t edge, global int* depth, int* depthChecks);
 
 // edges that have not been visited have a depth of -1
-bool visited(lid_t edge, global int* depth) {
+bool visited(lid_t edge, global int* depth, int* depthChecks) {
+    (*depthChecks)++;
     return (depth[edge] != -1);
 }
 
@@ -16,6 +17,7 @@ kernel void bfsScgKernel(global long* degreeList,
                      const int numVerts,
                      const int level)
 {
+  int depthChecks = 0;
   lid_t numChunks = get_num_groups(0); // number of chunks
   lid_t chunkLength = get_local_size(0); // number of verts in a chunk
   lid_t chunk = get_group_id(0); // which chunk is this work-item in
@@ -52,7 +54,7 @@ kernel void bfsScgKernel(global long* degreeList,
     const lid_t edge = edgeList[j];
     // skip padded entries/edges
     if (edge == -1) continue;
-    if (visited(edge,depth) ) {
+    if (visited(edge,depth,&depthChecks) ) {
       if (depth[edge] < minDepth) {
         // this edge has the lowest depth of those adjacent to vtx 'gid'
         minDepthEdge = edge;
@@ -67,10 +69,14 @@ kernel void bfsScgKernel(global long* degreeList,
       const lid_t edge = edgeList[j];
       // skip padded entries/edges
       if (edge == -1) continue;
-      if (!visited(edge,depth)) {
+      if (!visited(edge,depth,&depthChecks)) {
         depth[edge] = minDepth+1;
         atomic_inc(frontSize);
       }
     }
   }
+#ifdef KERNEL_DEBUG
+  if ( ! get_global_id(0) )
+      printf("depthChecks %d\n", depthChecks);
+#endif
 }
