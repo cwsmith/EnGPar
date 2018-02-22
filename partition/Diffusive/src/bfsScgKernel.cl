@@ -31,17 +31,8 @@ kernel void bfsScgKernel(global long* degreeList,
   //no work here - just a padded global entry
   if( gid >= numVerts ) return;
 
-  //need to compute the chunkStart
-  //  the obvious way to do this is to compute the sum from the degreelist
-  lid_t chunkStart = 0;
-  for(lid_t i = 0; i < chunk; i++) {
-    const lid_t maxChunkDeg = degreeList[i+1] - degreeList[i];
-    const lid_t chunkSize = chunkLength*maxChunkDeg;
-    chunkStart+=chunkSize;
-  }
-
-
-  const lid_t maxChunkDeg = degreeList[chunk+1] - degreeList[chunk];
+  const lid_t chunkStart = degreeList[chunk];
+  const lid_t maxChunkDeg = (degreeList[chunk+1] - degreeList[chunk])/chunkLength;
   const lid_t chunkSize = chunkLength*maxChunkDeg;
   const lid_t firstEdgeIdx = chunkStart+lid;
   const lid_t lastEdgeIdx = firstEdgeIdx+chunkSize;
