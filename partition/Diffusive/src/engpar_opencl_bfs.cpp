@@ -135,9 +135,15 @@ namespace engpar {
     ////////
     // vert-to-nets
     agi::lid_t edgeListSize = 0;
-    for (agi::lid_t i =0; i < pg->num_vtx_chunks;i++)
-      edgeListSize+=(pg->degree_list[t][i+1]-pg->degree_list[t][i]);
+    agi::lid_t maxDegree = 0;
+    for (agi::lid_t i =0; i < pg->num_vtx_chunks;i++) {
+      agi::lid_t degree = pg->degree_list[t][i+1]-pg->degree_list[t][i];
+      if( degree > maxDegree ) maxDegree = degree;
+      edgeListSize+=degree;
+    }
     edgeListSize*=pg->chunk_size;
+    printf("host: max chunk degree %ld number of vertex chunks %ld\n", maxDegree, pg->num_vtx_chunks);
+    printf("host: edgeListSize %ld\n", edgeListSize);
     cl::Buffer* d_degreeList = copyToDevice<agi::lid_t>(
         pg->degree_list[t],
         pg->num_vtx_chunks+1,
