@@ -39,7 +39,7 @@ for bfsmode in ${bfsModeIdx[@]}; do
   [ $bfsmode == 2 ] && kernel="--kernel bfsCsrKernel.cl"
   [ $bfsmode == 3 ] && kernel="--kernel bfsScgKernel.cl"
   chunkRange=(1)
-  [ $bfsmode == 3 ] && chunkRange=$chunkSizes
+  [ $bfsmode == 3 ] && chunkRange=${chunkSizes[@]}
   for t in ${tests[@]}; do
     graphName=${t##*/}
     for c in ${chunkRange[@]}; do
@@ -60,11 +60,12 @@ for bfsmode in ${bfsModeIdx[@]}; do
   cat /dev/null > $outlog
   echo "${bfsModeString[$bfsmode]} bfs"
   chunkRange=(1)
-  [ $bfsmode == 3 ] && chunkRange=$chunkSizes
+  [ $bfsmode == 3 ] && chunkRange=${chunkSizes[@]}
   for t in ${tests[@]}; do
     graphName=${t##*/}
     for c in ${chunkRange[@]}; do
       inlog=${bfsModeString[$bfsmode]}_chunk${c}_${graphName}.log
+      echo graph $t bfsmode $bfsmode chunk $c inlog $inlog outlog $outlog
       avg=$(awk "${cmdString[$bfsmode]}" $inlog)
       echo "$graphName,$c,$avg" >> $outlog
     done
