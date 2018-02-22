@@ -25,17 +25,21 @@ upright/190k
 upright/400k
 upright/890k
 upright/1.6M
+upright/13M
+upright/28M
 EOF
 
+chunkSizes=(128 256 512 1024 2048)
 bfsModeString=("push" "pull" "csropencl" "scgopencl")
+bfsModeIdx=(0 1 2 3)
 
-for bfsmode in 0 1 2 3; do
+for bfsmode in ${bfsModeIdx[@]}; do
   echo "${bfsModeString[$bfsmode]} bfs"
   kernel=""
   [ $bfsmode == 2 ] && kernel="--kernel bfsCsrKernel.cl"
   [ $bfsmode == 3 ] && kernel="--kernel bfsScgKernel.cl"
   chunkRange=(1)
-  [ $bfsmode == 3 ] && chunkRange=(16 32 64 128 256 512 1024 2048)
+  [ $bfsmode == 3 ] && chunkRange=$chunkSizes
   for t in ${tests[@]}; do
     graphName=${t##*/}
     for c in ${chunkRange[@]}; do
@@ -51,12 +55,12 @@ cmdString=('/push bfs time/ {sum+=$6; cnt+=1} END {print sum/cnt}'
            '/pull bfs time/ {sum+=$6; cnt+=1} END {print sum/cnt}'
            '/^opencl bfs time/ {sum+=$5; cnt+=1} END {print sum/cnt}'
            '/^opencl bfs time/ {sum+=$5; cnt+=1} END {print sum/cnt}')
-for bfsmode in 0 1 2 3; do
+for bfsmode in ${bfsModeIdx[@]}; do
   outlog=${bfsModeString[$bfsmode]}AvgTimes.csv
   cat /dev/null > $outlog
   echo "${bfsModeString[$bfsmode]} bfs"
   chunkRange=(1)
-  [ $bfsmode == 3 ] && chunkRange=(16 32 64 128 256 512 1024 2048)
+  [ $bfsmode == 3 ] && chunkRange=$chunkSizes
   for t in ${tests[@]}; do
     graphName=${t##*/}
     for c in ${chunkRange[@]}; do
