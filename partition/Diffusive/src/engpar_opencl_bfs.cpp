@@ -113,7 +113,7 @@ namespace engpar {
       <cl::Buffer,        //degreeList
        cl::Buffer,        //edgeList
        cl::Buffer,        //depth
-       cl::Buffer,        //update flag
+       cl::Buffer,        //front size
        cl_int,            //num verts
        cl_int>            //bfs level
       bfsScgKernel(*program, "bfsScgKernel");
@@ -159,19 +159,20 @@ namespace engpar {
 
     int maxLevel=1000;
     int level=start_depth;
-    char h_changes;
-    do { 
-      h_changes = false;
+    int h_frontSize;
+    do {
+      h_frontSize = 0;
       // run the kernel once for each chunk
-      cl::Buffer* d_changes = copyToDevice<char>(
-          &h_changes,
+      cl::Buffer* d_frontSize = copyToDevice<int>(
+          &h_frontSize,
           1,
           CL_MEM_WRITE_ONLY);
       bfsScgKernel(cl::EnqueueArgs(*engpar_ocl_queue, global, local),
-          *d_degreeList, *d_edgeList, *d_depth, *d_changes, pg->num_local_verts, level);
-      copyFromDevice<char>(d_changes, &h_changes, 1);
+          *d_degreeList, *d_edgeList, *d_depth, *d_frontSize, pg->num_local_verts, level);
+      copyFromDevice<int>(d_frontSize, &h_frontSize, 1);
+      printf("level %d frontSize %d\n", level, h_frontSize);
       level++;
-    } while(h_changes && level < maxLevel);
+    } while(h_frontSize && level < maxLevel);
 
     copyFromDevice<int>(d_depth, in->visited, pg->num_local_edges[t]);
 

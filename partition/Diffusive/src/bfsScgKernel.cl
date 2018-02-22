@@ -12,7 +12,7 @@ bool visited(lid_t edge, global int* depth) {
 kernel void bfsScgKernel(global long* degreeList,
                      global long* edgeList,
                      global int* depth,
-                     global char* changes,
+                     global int* frontSize,
                      const int numVerts,
                      const int level)
 {
@@ -38,10 +38,12 @@ kernel void bfsScgKernel(global long* degreeList,
     chunkStart+=chunkSize;
   }
 
+
   const lid_t maxChunkDeg = degreeList[chunk+1] - degreeList[chunk];
   const lid_t chunkSize = chunkLength*maxChunkDeg;
   const lid_t firstEdgeIdx = chunkStart+lid;
   const lid_t lastEdgeIdx = firstEdgeIdx+chunkSize;
+
   // loop through the edges adjacent to the vertex and find
   // the one with the smallest depth
   lid_t minDepthEdge = -1;
@@ -67,7 +69,7 @@ kernel void bfsScgKernel(global long* degreeList,
       if (edge == -1) continue;
       if (!visited(edge,depth)) {
         depth[edge] = minDepth+1;
-        *changes = true;
+        atomic_inc(frontSize);
       }
     }
   }
