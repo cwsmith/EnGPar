@@ -118,6 +118,14 @@ namespace engpar {
        cl_int>            //bfs level
       bfsScgKernel(*program, "bfsScgKernel");
 
+    //compute the starting index for the chunk
+    agi::lid_t* chunkStart = new agi::lid_t[pg->num_vtx_chunks+1];
+    chunkStart[0] = 0;
+    for(agi::lid_t i = 0; i < pg->num_vtx_chunks; i++) {
+      agi::lid_t chunkWidth = pg->degree_list[t][i+1] - pg->degree_list[t][i];
+      chunkStart[i+1] = pg->chunk_size*chunkWidth + chunkStart[i];
+    }
+
     double t0=PCU_Time();
     // initialize the visited/depth array
     for (agi::lid_t i=start_seed;i<in->numSeeds;i++) 
@@ -134,18 +142,11 @@ namespace engpar {
     // copy the graph CSRs to the device
     ////////
     // vert-to-nets
-    agi::lid_t edgeListSize = 0;
-    agi::lid_t maxDegree = 0;
-    for (agi::lid_t i =0; i < pg->num_vtx_chunks;i++) {
-      agi::lid_t degree = pg->degree_list[t][i+1]-pg->degree_list[t][i];
-      if( degree > maxDegree ) maxDegree = degree;
-      edgeListSize+=degree;
-    }
-    edgeListSize*=pg->chunk_size;
-    printf("host: max chunk degree %ld number of vertex chunks %ld\n", maxDegree, pg->num_vtx_chunks);
+    agi::lid_t edgeListSize = chunkStart[pg->num_vtx_chunks];
     printf("host: edgeListSize %ld\n", edgeListSize);
+    printf("host: number of vertex chunks %ld\n", pg->num_vtx_chunks);
     cl::Buffer* d_degreeList = copyToDevice<agi::lid_t>(
-        pg->degree_list[t],
+        chunkStart,
         pg->num_vtx_chunks+1,
         CL_MEM_READ_ONLY);
     cl::Buffer* d_edgeList = copyToDevice<agi::lid_t>(
@@ -195,6 +196,7 @@ namespace engpar {
     if(!PCU_Comm_Self())
       printf("opencl bfs time (s) %f\n", PCU_Time()-t0);
 
+    delete [] chunkStart;
 
     return 0;
   }
