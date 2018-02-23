@@ -39,10 +39,10 @@ kernel void bfsScgKernel(global long* degreeList,
 
   // loop through the edges adjacent to the vertex and find
   // the one with the smallest depth
-  lid_t minDepthEdge = -1;
+  lid_t minDepthEdge;
   int minDepth = LARGE_DEPTH;
   for (lid_t j = firstEdgeIdx; j < lastEdgeIdx; j += chunkLength) {
-    const lid_t edge = edgeList[j];
+    const long edge = edgeList[j];
     // skip padded entries/edges
     if (edge == -1) continue;
     if (visited(edge,depth,&depthChecks) ) {
@@ -57,7 +57,7 @@ kernel void bfsScgKernel(global long* degreeList,
     // a visited edge was found - loop through the adjacent 
     // edges again and set the depth of unvisited edges
     for (lid_t j = firstEdgeIdx; j < lastEdgeIdx; j += chunkLength) {
-      const lid_t edge = edgeList[j];
+      const long edge = edgeList[j];
       // skip padded entries/edges
       if (edge == -1) continue;
       if (!visited(edge,depth,&depthChecks)) {
