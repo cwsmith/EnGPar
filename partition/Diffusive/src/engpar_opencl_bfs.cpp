@@ -118,6 +118,15 @@ namespace engpar {
        cl_int>            //bfs level
       bfsScgKernel(*program, "bfsScgKernel");
 
+    // copy the arrays of longs to int arrays
+    int* dl = new int[pg->num_vtx_chunks+1];
+    for(int i=0; i < pg->num_vtx_chunks+1; i++)
+      dl[i] = pg->degree_list[t][i];
+    agi::lid_t edgeListSize = pg->degree_list[t][pg->num_vtx_chunks];
+    int* el = new int[edgeListSize];
+    for(int i=0; i < edgeListSize; i++)
+      el[i] = pg->edge_list[t][i];
+
     double t0=PCU_Time();
     // initialize the visited/depth array
     for (agi::lid_t i=start_seed;i<in->numSeeds;i++) 
@@ -135,14 +144,13 @@ namespace engpar {
     ////////
     // vert-to-nets
     printf("host: number of vertex chunks %ld\n", pg->num_vtx_chunks);
-    agi::lid_t edgeListSize = pg->degree_list[t][pg->num_vtx_chunks];
     printf("host: edgeListSize %ld\n", edgeListSize);
-    cl::Buffer* d_degreeList = copyToDevice<agi::lid_t>(
-        pg->degree_list[t],
+    cl::Buffer* d_degreeList = copyToDevice<int>(
+        dl,
         pg->num_vtx_chunks+1,
         CL_MEM_READ_ONLY);
-    cl::Buffer* d_edgeList = copyToDevice<agi::lid_t>(
-        pg->edge_list[t],
+    cl::Buffer* d_edgeList = copyToDevice<int>(
+        el,
         edgeListSize,
         CL_MEM_READ_ONLY);
     ////////
@@ -187,6 +195,9 @@ namespace engpar {
     delete program;
     if(!PCU_Comm_Self())
       printf("opencl bfs time (s) %f\n", PCU_Time()-t0);
+
+    delete [] dl;
+    delete [] el;
 
     return 0;
   }

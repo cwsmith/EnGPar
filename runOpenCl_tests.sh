@@ -29,7 +29,7 @@ upright/13M
 upright/28M
 EOF
 
-chunkSizes=(128 256 512 1024 2048)
+chunkSizes=(32 64 128 256 512 1024 2048)
 bfsModeString=("push" "pull" "csropencl" "scgopencl")
 bfsModeIdx=(0 1 2 3)
 

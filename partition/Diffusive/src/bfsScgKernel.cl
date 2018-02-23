@@ -1,6 +1,6 @@
 // vim :set ts=2 sw=2 sts=2 et :
 
-typedef uint lid_t;
+typedef int lid_t;
 
 bool visited(lid_t edge, global int* depth, int* depthChecks);
 
@@ -10,8 +10,8 @@ bool visited(lid_t edge, global int* depth, int* depthChecks) {
     return (depth[edge] != -1);
 }
 
-kernel void bfsScgKernel(global long* degreeList,
-                     global long* edgeList,
+kernel void bfsScgKernel(global lid_t* degreeList,
+                     global lid_t* edgeList,
                      global int* depth,
                      global int* frontSize,
                      const int numVerts,
