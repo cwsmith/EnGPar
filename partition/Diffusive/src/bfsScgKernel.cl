@@ -10,10 +10,10 @@ bool visited(lid_t edge, global int* depth, int* depthChecks) {
     return (depth[edge] != -1);
 }
 
-kernel void bfsScgKernel(global lid_t* degreeList,
-                     global lid_t* edgeList,
-                     global int* depth,
-                     global int* frontSize,
+kernel void bfsScgKernel(global lid_t* restrict degreeList,
+                     global lid_t* restrict edgeList,
+                     global int* restrict depth,
+                     global int* restrict frontSize,
                      const int numVerts,
                      const int level)
 {
