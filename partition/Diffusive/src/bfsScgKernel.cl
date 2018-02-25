@@ -42,7 +42,7 @@ kernel void bfsScgKernel(global lid_t* restrict degreeList,
   lid_t minDepthEdge;
   int minDepth = LARGE_DEPTH;
   for (lid_t j = firstEdgeIdx; j < lastEdgeIdx; j += chunkLength) {
-    const long edge = edgeList[j];
+    const lid_t edge = edgeList[j];
     // skip padded entries/edges
     if (edge == -1) continue;
     if (visited(edge,depth,&depthChecks) ) {
