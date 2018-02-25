@@ -2,13 +2,25 @@
 
 typedef int lid_t;
 
-bool visited(lid_t edge, global int* depth, int* depthChecks);
+#define checkEdge(edge, depth, minDepthEdge, minDepth) { \
+  const int d = (depth[(edge)]);                         \
+  if ( d != -1 ) { /*visited*/                           \
+    if ( d < minDepth) {                                 \
+      /* this edge has the lowest */                     \
+      /* depth of those adjacent to vtx 'gid' */         \
+      (minDepthEdge) = (edge);                           \
+      (minDepth) = d;                                    \
+    }                                                    \
+  }                                                      \
+}                                                        \
 
-// edges that have not been visited have a depth of -1
-bool visited(lid_t edge, global int* depth, int* depthChecks) {
-    (*depthChecks)++;
-    return (depth[edge] != -1);
-}
+#define updateDepth(edge, depth, nextDepth, frontSize) { \
+  const int d = (depth[(edge)]);                        \
+  if ( d == -1 ) {  /*not visited*/                     \
+    (depth[(edge)]) = nextDepth;                        \
+    atomic_inc((frontSize));                            \
+  }                                                     \
+}                                                       \
 
 kernel void bfsScgKernel(global lid_t* restrict degreeList,
                      global lid_t* restrict edgeList,
@@ -41,30 +53,37 @@ kernel void bfsScgKernel(global lid_t* restrict degreeList,
   // the one with the smallest depth
   lid_t minDepthEdge;
   int minDepth = LARGE_DEPTH;
+#ifdef SCG_UNROLL
+  checkEdge(edgeList[firstEdgeIdx], depth, minDepthEdge, minDepth);
+  checkEdge(edgeList[firstEdgeIdx+chunkLength], depth, minDepthEdge, minDepth);
+  checkEdge(edgeList[firstEdgeIdx+chunkLength*2], depth, minDepthEdge, minDepth);
+  checkEdge(edgeList[firstEdgeIdx+chunkLength*3], depth, minDepthEdge, minDepth);
+#else
   for (lid_t j = firstEdgeIdx; j < lastEdgeIdx; j += chunkLength) {
     const lid_t edge = edgeList[j];
     // skip padded entries/edges
     if (edge == -1) continue;
-    if (visited(edge,depth,&depthChecks) ) {
-      if (depth[edge] < minDepth) {
-        // this edge has the lowest depth of those adjacent to vtx 'gid'
-        minDepthEdge = edge;
-        minDepth = depth[edge];
-      }
-    }
+    checkEdge(edge, depth, minDepthEdge, minDepth);
   }
+#endif
+
   if (minDepth == level) {
+    const int nextDepth = level+1;
+#ifdef SCG_UNROLL
+    updateDepth(edgeList[firstEdgeIdx], depth, nextDepth, frontSize);
+    updateDepth(edgeList[firstEdgeIdx+chunkLength], depth, nextDepth, frontSize);
+    updateDepth(edgeList[firstEdgeIdx+chunkLength*2], depth, nextDepth, frontSize);
+    updateDepth(edgeList[firstEdgeIdx+chunkLength*3], depth, nextDepth, frontSize);
+#else
     // a visited edge was found - loop through the adjacent 
     // edges again and set the depth of unvisited edges
     for (lid_t j = firstEdgeIdx; j < lastEdgeIdx; j += chunkLength) {
-      const long edge = edgeList[j];
+      const lid_t edge = edgeList[j];
       // skip padded entries/edges
       if (edge == -1) continue;
-      if (!visited(edge,depth,&depthChecks)) {
-        depth[edge] = minDepth+1;
-        atomic_inc(frontSize);
-      }
+      updateDepth(edge,depth,nextDepth,frontSize);
     }
+#endif
   }
 #ifdef KERNEL_DEBUG
   if ( ! get_global_id(0) )
