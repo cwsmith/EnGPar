@@ -30,14 +30,14 @@ upright/28M
 EOF
 
 chunkSizes=(32 64 128 256 512 1024 2048)
-bfsModeString=("push" "pull" "csropencl" "scgopencl")
-bfsModeIdx=(0 1 2 3)
+bfsModeString=("push" "csropencl" "scgopencl")
+bfsModeIdx=(0 1 2)
 
 for bfsmode in ${bfsModeIdx[@]}; do
   echo "${bfsModeString[$bfsmode]} bfs"
   kernel=""
-  [ $bfsmode == 2 ] && kernel="--kernel bfsCsrKernel.cl"
-  [ $bfsmode == 3 ] && kernel="--kernel bfsScgKernel.cl"
+  [ $bfsmode == 1 ] && kernel="--kernel bfsCsrKernel.cl"
+  [ $bfsmode == 2 ] && kernel="--kernel bfsScgKernel.cl"
   chunkRange=(1)
   [ $bfsmode == 3 ] && chunkRange=${chunkSizes[@]}
   for t in ${tests[@]}; do
@@ -52,7 +52,6 @@ for bfsmode in ${bfsModeIdx[@]}; do
 done
 
 cmdString=('/push bfs time/ {sum+=$6; cnt+=1} END {print sum/cnt}' 
-           '/pull bfs time/ {sum+=$6; cnt+=1} END {print sum/cnt}'
            '/^opencl bfs time/ {sum+=$5; cnt+=1} END {print sum/cnt}'
            '/^opencl bfs time/ {sum+=$5; cnt+=1} END {print sum/cnt}')
 for bfsmode in ${bfsModeIdx[@]}; do
