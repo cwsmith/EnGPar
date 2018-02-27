@@ -35,6 +35,7 @@ kernel void bfsScgPipelinedKernel(global lid_t* restrict degreeList,
   int level=start_depth;
   int changes;
   do {
+    int vtx = 0;
     changes = false;
     for(int chunk=0; chunk < numChunks; chunk++) {
       const lid_t chunkStart = degreeList[chunk];
@@ -42,6 +43,9 @@ kernel void bfsScgPipelinedKernel(global lid_t* restrict degreeList,
       const lid_t chunkSize = chunkLength*maxChunkDeg;
 
       for(int j=0; j<chunkLength; j++) {
+        vtx++;
+        if (vtx > numVerts) 
+            continue;
         const lid_t firstEdgeIdx = chunkStart+j;
         const lid_t lastEdgeIdx = firstEdgeIdx+chunkSize;
       
