@@ -16,6 +16,7 @@ namespace engpar {
     bfsPull = true;
     bfsCsrOpenCL = false;
     bfsScgOpenCL = false;
+    isPipelined = false;
     kernel = "";
     chunkSize = 1;
   }

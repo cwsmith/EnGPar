@@ -5,6 +5,7 @@
 #include "engpar_queue_inputs.h"
 namespace engpar {
   int bfs_pull_OpenCL(agi::Ngraph* g, agi::etype t,agi::lid_t start_seed,
-             int start_depth, visitFn visit, Inputs* in, std::string kernel);
+             int start_depth, visitFn visit, Inputs* in, std::string kernel,
+             bool isPipelined);
 }
 #endif

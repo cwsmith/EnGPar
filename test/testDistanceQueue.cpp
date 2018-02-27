@@ -16,8 +16,8 @@ extern cl::Device* engpar_ocl_device;
 
 
 void parseDriverArguments(int argc, char *argv[],
-    cl_uint *deviceIndex, int* bfsmode, int* chunkSize,
-    std::string& graphFileName, std::string& kernelFileName) {
+    cl_uint *deviceIndex, int* bfsmode, bool* pipelined,
+    int* chunkSize, std::string& graphFileName, std::string& kernelFileName) {
   for (int i = 1; i < argc; i++) {
     if (!strcmp(argv[i], "--list")) {
       // Get list of devices
@@ -64,9 +64,12 @@ void parseDriverArguments(int argc, char *argv[],
         exit(1);
       }
       *bfsmode = atoi(argv[i]);
+    } else if (!strcmp(argv[i], "--pipelined")) {
+      *pipelined = true;
     } else if (!strcmp(argv[i], "--help") || !strcmp(argv[i], "-h")) {
       std::cout << "\n";
       std::cout << "      --bfsmode     [0|1|2|3]   0:push, 1:pull, 2:csrOpenCL 3:scgOpenCL" << std::endl;
+      std::cout << "      --pipelined               enable the pipelined opencl kernel" << std::endl;
       std::cout << "      --chunkSize   [1:N]       size of SCG chunks, only applies to bfsmode=3" << std::endl;
       std::cout << "      --graph       <pathToGraphFile.bgd>" << std::endl;
       std::cout << "      --list               List available devices\n";
@@ -84,13 +87,14 @@ int main(int argc, char* argv[]) {
 
   int bfsmode = 0;
   int chunkSize = 1;
+  bool pipelined = false;
   agi::Ngraph* g;
   std::string graphFileName("");
   std::string kernelFileName("");
   try
   {
     cl_uint deviceIndex = 0;
-    parseDriverArguments(argc,argv,&deviceIndex,&bfsmode,&chunkSize,graphFileName,kernelFileName);
+    parseDriverArguments(argc,argv,&deviceIndex,&bfsmode,&pipelined,&chunkSize,graphFileName,kernelFileName);
 
     // Get list of devices
     std::vector<cl::Device> devices;
@@ -141,6 +145,7 @@ int main(int argc, char* argv[]) {
   inp->chunkSize = chunkSize;
   inp->kernel = kernelFileName;
   inp->bfsPush = inp->bfsPull = inp->bfsCsrOpenCL = inp->bfsScgOpenCL = false;
+  inp->isPipelined = pipelined;
   if (bfsmode == 0)
     inp->bfsPush = true;
   else if (bfsmode == 1)

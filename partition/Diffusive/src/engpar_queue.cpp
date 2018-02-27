@@ -265,7 +265,7 @@ namespace engpar {
     } else if (input->bfsCsrOpenCL) {
 #ifdef ENGPAR_OPENCL_ENABLED
       bfsmethod="csropencl";
-      bfs_pull_OpenCL(g,t,0,0,depth_visit,in1,input->kernel);
+      bfs_pull_OpenCL(g,t,0,0,depth_visit,in1,input->kernel,input->isPipelined);
 #else
       fprintf(stderr, "bfsCsrOpenCL requested, but OpenCL is not enabled!"
                       "Rerun CMake with \'ENABLE_OPENCL=ON\'.\n");
@@ -285,7 +285,7 @@ namespace engpar {
       //convert the seedGids back to local ids using the SCG map
       for(int i=0; i < in1->numSeeds; i++)
         in1->seeds[i] = pscg->edge_mapping[t][ seedGids[i] ];
-      bfs_pull_OpenCL(scg,t,0,0,depth_visit,in1,input->kernel);
+      bfs_pull_OpenCL(scg,t,0,0,depth_visit,in1,input->kernel, input->isPipelined);
 #else
       fprintf(stderr, "bfsScgOpenCL requested, but OpenCL is not enabled!"
                       "Rerun CMake with \'ENABLE_OPENCL=ON\'.\n");

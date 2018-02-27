@@ -87,6 +87,12 @@ namespace engpar {
      */
     bool bfsScgOpenCL;
 
+    /** \brief use the pipelined opencl bfs
+     *
+     * defaults to false
+     */
+    bool isPipelined;
+
     /** \brief path to the OpenCL kernel
      *
      * defaults to an empty string

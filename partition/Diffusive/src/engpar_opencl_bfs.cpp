@@ -220,6 +220,91 @@ namespace engpar {
     return 0;
   }
 
+  /*
+    Pull based BFS using Pipelined OpenCL takes in :
+      graph
+      edge type
+      first seed index into depth array
+      starting depth
+      the visit function
+      inputs object
+  */
+  int bfsPullOpenclScgPipelined(agi::PNgraph* pg, agi::etype t,
+      agi::lid_t start_seed, int start_depth, Inputs* in,
+      std::string kernel) {
+    int degree = isUniformDegree(pg,t);
+    printf("graph vtx->hyperedge degree %d\n", degree);
+    cl::Program* program = createProgram(kernel,degree);
+
+    cl::make_kernel
+      <cl::Buffer,        //degreeList
+       cl::Buffer,        //edgeList
+       cl::Buffer,        //depth
+       cl_int,            //num chunks
+       cl_int,            //chunk length
+       cl_int,            //num verts
+       cl_int>            //start depth
+      bfsScgPipelinedKernel(*program, "bfsScgPipelinedKernel");
+
+    double t0=PCU_Time();
+    // initialize the visited/depth array
+    for (agi::lid_t i=start_seed;i<in->numSeeds;i++)
+      in->visited[in->seeds[i]] = start_depth;
+
+    printf("host: numVtx numEdges numPins numSeeds startDepth "
+           "%ld %ld %ld %ld %d\n",
+           pg->num_local_verts,
+           pg->num_local_edges[t],
+           pg->num_local_pins[t],
+           in->numSeeds,
+           start_depth);
+    ////////
+    // copy the graph CSRs to the device
+    ////////
+    // vert-to-nets
+    agi::lid_t edgeListSize = pg->degree_list[t][pg->num_vtx_chunks];
+    printf("host: number of vertex chunks %ld\n", pg->num_vtx_chunks);
+    printf("host: edgeListSize %ld\n", edgeListSize);
+    cl::Buffer* d_degreeList = copyToDevice<int>(
+        pg->degree_list[t],
+        pg->num_vtx_chunks+1,
+        CL_MEM_READ_ONLY);
+    cl::Buffer* d_edgeList = copyToDevice<int>(
+        pg->edge_list[t],
+        edgeListSize,
+        CL_MEM_READ_ONLY);
+    ////////
+    // vertex depth array
+    ////////
+    cl::Buffer* d_depth = copyToDevice<int>(
+        in->visited,
+        pg->num_local_edges[t],
+        CL_MEM_READ_WRITE);
+
+    // single workitem kernel!
+    cl::NDRange one(1);
+    bfsScgPipelinedKernel(cl::EnqueueArgs(*engpar_ocl_queue, one, one),
+        *d_degreeList, *d_edgeList, *d_depth,
+        pg->num_vtx_chunks, pg->chunk_size, pg->num_local_verts, start_depth);
+
+    copyFromDevice<int>(d_depth, in->visited, pg->num_local_edges[t]);
+
+    // TODO: reconstruct seeds array from depth array
+    //  the serial implementation computes the seeds array on the fly, but that
+    //  is hard to do in a parallel implementation without using atomics
+    // The seeds array contains contiguous groups of edges with the same depth
+    // in ascending order (first group is depth 1).
+
+    delete d_degreeList;
+    delete d_edgeList;
+    delete d_depth;
+    delete program;
+    if(!PCU_Comm_Self())
+      printf("opencl bfs time (s) %f\n", PCU_Time()-t0);
+
+    return 0;
+  }
+
   int bfsPullOpenclCsr(agi::PNgraph* pg, agi::etype t,agi::lid_t start_seed,
                int start_depth, Inputs* in, std::string kernel) {
     int degree = isUniformDegree(pg,t);
@@ -301,7 +386,7 @@ namespace engpar {
   }
 
   int bfs_pull_OpenCL(agi::Ngraph* g, agi::etype t,agi::lid_t start_seed,
-               int start_depth, visitFn, Inputs* in, std::string kernel) {
+               int start_depth, visitFn, Inputs* in, std::string kernel, bool isPipelined) {
     agi::PNgraph* pg = g->publicize();
     if( ! pg->isHyperGraph ) {
       fprintf(stderr, "ERROR: %s requires a hypergraph... exiting\n", __func__);
@@ -309,7 +394,10 @@ namespace engpar {
     }
     int err = 1;
     if( pg->isSellCSigma ) {
-      err = bfsPullOpenclScg(pg,t,start_seed,start_depth,in,kernel);
+      if( isPipelined )
+        err = bfsPullOpenclScgPipelined(pg,t,start_seed,start_depth,in,kernel);
+      else
+        err = bfsPullOpenclScg(pg,t,start_seed,start_depth,in,kernel);
     } else {
       err = bfsPullOpenclCsr(pg,t,start_seed,start_depth,in,kernel);
     }
