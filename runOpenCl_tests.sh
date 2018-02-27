@@ -32,12 +32,17 @@ EOF
 chunkSizes=(32 64 128 256 512 1024 2048)
 bfsModeString=("push" "pull" "csropencl" "scgopencl")
 bfsModeIdx=(0 1 2 3)
+isPipelined=1
+device=1
 
 for bfsmode in ${bfsModeIdx[@]}; do
   echo "${bfsModeString[$bfsmode]} bfs"
   kernel=""
   [ $bfsmode == 2 ] && kernel="--kernel bfsCsrKernel.cl"
   [ $bfsmode == 3 ] && kernel="--kernel bfsScgKernel.cl"
+  [[ $bfsmode == 3 && $isPipelined ]] && kernel="--kernel bfsScgPipelinedKernel.cl"
+  pipelined=""
+  [ $isPipelined ] && pipelined="--pipelined"
   chunkRange=(1)
   [ $bfsmode == 3 ] && chunkRange=${chunkSizes[@]}
   for t in ${tests[@]}; do
@@ -45,7 +50,7 @@ for bfsmode in ${bfsModeIdx[@]}; do
     for c in ${chunkRange[@]}; do
       echo graph $t bfsmode $bfsmode $kernel chunk $c
       for i in {1..3}; do
-        $bin --device 0 --graph ${graphDir}/$t --bfsmode $bfsmode $kernel --chunkSize $c >> ${bfsModeString[$bfsmode]}_chunk${c}_${graphName}.log
+        $bin --device $device --graph ${graphDir}/$t --bfsmode $bfsmode $pipelined $kernel --chunkSize $c >> ${bfsModeString[$bfsmode]}_chunk${c}_${graphName}.log
       done
     done
   done
