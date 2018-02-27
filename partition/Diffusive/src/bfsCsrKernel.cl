@@ -1,4 +1,4 @@
-typedef long lid_t;
+typedef int lid_t;
 
 bool visited(lid_t edge, global int* depth);
 
@@ -7,8 +7,8 @@ bool visited(lid_t edge, global int* depth) {
     return (depth[edge] != -1);
 }
 
-kernel void bfsCsrKernel(global long* degreeList,
-                     global long* edgeList,
+kernel void bfsCsrKernel(global lid_t* degreeList,
+                     global lid_t* edgeList,
                      global int* depth,
                      global char* changes,
                      const int level)
