@@ -44,7 +44,7 @@ namespace {
         new cl::Program(*engpar_ocl_context, util::loadProgram(kernelFileName));
       try {
         if( degree == 4 )
-          program->build("-DSCG_UNROLL -Werror");
+          program->build("-DCSR_UNROLL -DSCG_UNROLL -Werror");
         else
           program->build("-Werror");
       } catch (cl::Error error) {
@@ -78,14 +78,24 @@ namespace {
    *  \return 0 if nonuniform; o.w., the uniform degree
    **/
   int isUniformDegree(agi::PNgraph* pg, agi::etype t) {
-    int C = pg->chunk_size;
-    agi::lid_t degree = (pg->degree_list[t][1] - pg->degree_list[t][0])/C;
-    for(int i=1; i < pg->num_vtx_chunks; i++) {
-      const agi::lid_t maxChunkDeg = (pg->degree_list[t][i+1] - pg->degree_list[t][i])/C;
-      if( degree != maxChunkDeg )
-        return 0;
+    if( pg->isSellCSigma ) {
+      int C = pg->chunk_size;
+      agi::lid_t degree = (pg->degree_list[t][1] - pg->degree_list[t][0])/C;
+      for(int i=1; i < pg->num_vtx_chunks; i++) {
+        const agi::lid_t maxChunkDeg = (pg->degree_list[t][i+1] - pg->degree_list[t][i])/C;
+        if( degree != maxChunkDeg )
+          return 0;
+      }
+      return degree;
+    } else {
+      agi::lid_t degree = pg->degree_list[t][1] - pg->degree_list[t][0];
+      for (agi::lid_t i=1; i < pg->num_local_verts; i++) {
+        const agi::lid_t d = pg->degree_list[t][i+1] - pg->degree_list[t][i];
+        if( degree != d )
+          return 0;
+      }
+      return degree;
     }
-    return degree;
   }
 
 }
@@ -212,7 +222,9 @@ namespace engpar {
 
   int bfsPullOpenclCsr(agi::PNgraph* pg, agi::etype t,agi::lid_t start_seed,
                int start_depth, Inputs* in, std::string kernel) {
-    cl::Program* program = createProgram(kernel);
+    int degree = isUniformDegree(pg,t);
+    printf("graph vtx->hyperedge degree %d\n", degree);
+    cl::Program* program = createProgram(kernel,degree);
 
     cl::make_kernel
       <cl::Buffer,        //degreeList
