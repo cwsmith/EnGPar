@@ -22,6 +22,7 @@ typedef int lid_t;
   }                                                     \
 }                                                       \
 
+__attribute__((num_simd_work_items(16)))
 kernel void bfsScgKernel(global lid_t* restrict degreeList,
                      global lid_t* restrict edgeList,
                      global int* restrict depth,
