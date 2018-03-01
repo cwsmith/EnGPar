@@ -5,12 +5,48 @@
 #define __CL_ENABLE_EXCEPTIONS
 #include <cl.hpp>
 #include "util.hpp"
+#include "engpar_opencl_config.h"
+
 
 cl::Context* engpar_ocl_context;
 cl::CommandQueue* engpar_ocl_queue;
 cl::Device* engpar_ocl_device;
 
+#ifdef ENGPAR_OPENCL_ALTERA
+extern "C" void aocl_mmd_card_info(
+    const char *name , int id, size_t sz,
+    void *v, size_t *retsize);
+
 namespace {
+  float readboardpower(void) {
+    float pwr;
+    size_t retsize;
+    aocl_mmd_card_info("aclnalla_pcie0", 9,
+        sizeof(float),
+        (void*)&pwr, &retsize);
+    return pwr;
+  }
+  void monitorPower(cl::Event e) {
+    const char* statusStrings[4] = {"complete","running","submitted","queued"};
+    cl_int status;
+    do {
+      float during = readboardpower();
+      e.getInfo(CL_EVENT_COMMAND_EXECUTION_STATUS, &status);
+      printf("kernel %s, power (W) %f\n", statusStrings[status], during);
+    } while( status != CL_COMPLETE );
+    return;
+  }
+}
+#else
+namespace {
+  void monitorPower(cl::Event) {
+    return;
+  }
+}
+#endif
+
+namespace {
+
   // copy buffer from the host to the device
   template <typename T>
   cl::Buffer* copyToDevice(T* in, int numVals, int mode) {
@@ -195,8 +231,11 @@ namespace engpar {
           &h_frontSize,
           1,
           CL_MEM_WRITE_ONLY);
-      bfsScgKernel(cl::EnqueueArgs(*engpar_ocl_queue, global, local),
+      cl::Event e = bfsScgKernel(cl::EnqueueArgs(*engpar_ocl_queue, global, local),
           *d_degreeList, *d_edgeList, *d_depth, *d_frontSize, pg->num_local_verts, level);
+
+      monitorPower(e);
+
       copyFromDevice<int>(d_frontSize, &h_frontSize, 1);
       printf("level %d frontSize %d\n", level, h_frontSize);
       level++;
@@ -283,9 +322,11 @@ namespace engpar {
 
     // single workitem kernel!
     cl::NDRange one(1);
-    bfsScgPipelinedKernel(cl::EnqueueArgs(*engpar_ocl_queue, one, one),
+    cl::Event e = bfsScgPipelinedKernel(cl::EnqueueArgs(*engpar_ocl_queue, one, one),
         *d_degreeList, *d_edgeList, *d_depth,
         pg->num_vtx_chunks, pg->chunk_size, pg->num_local_verts, start_depth);
+
+    monitorPower(e);
 
     copyFromDevice<int>(d_depth, in->visited, pg->num_local_edges[t]);
 

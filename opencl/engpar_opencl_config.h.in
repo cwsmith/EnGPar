@@ -1,1 +1,2 @@
 #cmakedefine ENGPAR_OPENCL_ENABLED
+#cmakedefine ENGPAR_OPENCL_ALTERA
