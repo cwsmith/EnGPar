@@ -19,6 +19,7 @@ namespace engpar {
     isPipelined = false;
     kernel = "";
     chunkSize = 1;
+    edgeFileName = "";
   }
 
   void DiffusiveInput::addPriority(int type, double tolerance) {

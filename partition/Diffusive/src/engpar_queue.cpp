@@ -1,3 +1,4 @@
+#include <fstream>
 #include "engpar_queue.h"
 #include "engpar_queue_inputs.h"
 #include "engpar_bfsvisitfn.h"
@@ -7,6 +8,7 @@
 #ifdef ENGPAR_OPENCL_ENABLED
   #include "engpar_opencl_bfs.h"
 #endif
+
 
 namespace engpar {
   Queue* createIterationQueue(agi::Ngraph* g) {
@@ -298,13 +300,15 @@ namespace engpar {
     if( !PCU_Comm_Self() )
       printf("outer %s bfs time (s) %f\n", bfsmethod.c_str(), PCU_Time()-t0);
 
-    if( !PCU_Comm_Self() ) {
+    if( !PCU_Comm_Self() && input->edgeFileName != "" ) {
+      std::ofstream fout(input->edgeFileName);
+      printf("edge output %s\n", input->edgeFileName.c_str());
       agi::PNgraph* graph = pg;
       if( input->bfsScgOpenCL )
         graph = scg->publicize();
       for(int i=0; i < graph->num_local_edges[t]; i++) {
         gid_t edge = graph->edge_unmap[t][i];
-        printf("edge gid %d depth %d\n", edge, in1->visited[i]);
+        fout << "edge gid " << edge << " depth " << in1->visited[i] << "\n";
       }
     }
     if( input->bfsScgOpenCL )

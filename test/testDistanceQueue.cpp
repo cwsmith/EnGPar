@@ -16,8 +16,8 @@ extern cl::Device* engpar_ocl_device;
 
 
 void parseDriverArguments(int argc, char *argv[],
-    cl_uint *deviceIndex, int* bfsmode, bool* pipelined,
-    int* chunkSize, std::string& graphFileName, std::string& kernelFileName) {
+    cl_uint *deviceIndex, int* bfsmode, bool* pipelined, int* chunkSize,
+    std::string& graphFileName, std::string& kernelFileName, std::string& edgeFileName) {
   for (int i = 1; i < argc; i++) {
     if (!strcmp(argv[i], "--list")) {
       // Get list of devices
@@ -47,6 +47,12 @@ void parseDriverArguments(int argc, char *argv[],
         exit(1);
       }
       kernelFileName = std::string(argv[i]);
+    } else if (!strcmp(argv[i], "--writeEdgeDepth")) {
+      if (++i >= argc) {
+        std::cout << "Invalid edge depth filen name\n";
+        exit(1);
+      }
+      edgeFileName = std::string(argv[i]);
     } else if (!strcmp(argv[i], "--device")) {
       if (++i >= argc || !parseUInt(argv[i], deviceIndex)) {
         std::cout << "Invalid device index\n";
@@ -91,10 +97,12 @@ int main(int argc, char* argv[]) {
   agi::Ngraph* g;
   std::string graphFileName("");
   std::string kernelFileName("");
+  std::string edgeFileName("");
   try
   {
     cl_uint deviceIndex = 0;
-    parseDriverArguments(argc,argv,&deviceIndex,&bfsmode,&pipelined,&chunkSize,graphFileName,kernelFileName);
+    parseDriverArguments(argc,argv,&deviceIndex,&bfsmode,&pipelined,&chunkSize,
+        graphFileName,kernelFileName,edgeFileName);
 
     // Get list of devices
     std::vector<cl::Device> devices;
@@ -142,6 +150,7 @@ int main(int argc, char* argv[]) {
   engpar::Input* input = engpar::createDiffusiveInput(g,0);
   engpar::DiffusiveInput* inp = static_cast<engpar::DiffusiveInput*>(input);
 
+  inp->edgeFileName = edgeFileName;
   inp->chunkSize = chunkSize;
   inp->kernel = kernelFileName;
   inp->bfsPush = inp->bfsPull = inp->bfsCsrOpenCL = inp->bfsScgOpenCL = false;

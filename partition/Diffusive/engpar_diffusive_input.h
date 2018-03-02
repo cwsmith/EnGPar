@@ -104,6 +104,12 @@ namespace engpar {
      * defaults to 1
      */
     int chunkSize;
+
+    /** \brief filename to write edge gid and depth
+     *
+     * defaults to edgeDepth.txt
+     */
+    std::string edgeFileName;
   };
 }
 
