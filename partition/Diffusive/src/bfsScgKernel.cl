@@ -14,11 +14,11 @@ typedef int lid_t;
   }                                                      \
 }                                                        \
 
-#define updateDepth(edge, depth, nextDepth, frontSize) { \
+#define updateDepth(edge, depth, nextDepth, changes) { \
   const int d = (depth[(edge)]);                        \
   if ( d == -1 ) {  /*not visited*/                     \
     (depth[(edge)]) = nextDepth;                        \
-    atomic_inc((frontSize));                            \
+    *(changes) = 1;                                  \
   }                                                     \
 }                                                       \
 
@@ -27,7 +27,7 @@ __attribute__((reqd_work_group_size(64,1,1)))
 kernel void bfsScgKernel(global lid_t* restrict degreeList,
                      global lid_t* restrict edgeList,
                      global int* restrict depth,
-                     global int* restrict frontSize,
+                     global int* restrict changes,
                      const int numVerts,
                      const int level)
 {
@@ -72,10 +72,10 @@ kernel void bfsScgKernel(global lid_t* restrict degreeList,
   if (minDepth == level) {
     const int nextDepth = level+1;
 #ifdef SCG_UNROLL
-    updateDepth(edgeList[firstEdgeIdx], depth, nextDepth, frontSize);
-    updateDepth(edgeList[firstEdgeIdx+chunkLength], depth, nextDepth, frontSize);
-    updateDepth(edgeList[firstEdgeIdx+chunkLength*2], depth, nextDepth, frontSize);
-    updateDepth(edgeList[firstEdgeIdx+chunkLength*3], depth, nextDepth, frontSize);
+    updateDepth(edgeList[firstEdgeIdx], depth, nextDepth, changes);
+    updateDepth(edgeList[firstEdgeIdx+chunkLength], depth, nextDepth, changes);
+    updateDepth(edgeList[firstEdgeIdx+chunkLength*2], depth, nextDepth, changes);
+    updateDepth(edgeList[firstEdgeIdx+chunkLength*3], depth, nextDepth, changes);
 #else
     // a visited edge was found - loop through the adjacent 
     // edges again and set the depth of unvisited edges
@@ -83,7 +83,7 @@ kernel void bfsScgKernel(global lid_t* restrict degreeList,
       const lid_t edge = edgeList[j];
       // skip padded entries/edges
       if (edge == -1) continue;
-      updateDepth(edge,depth,nextDepth,frontSize);
+      updateDepth(edge,depth,nextDepth,changes);
     }
 #endif
   }
