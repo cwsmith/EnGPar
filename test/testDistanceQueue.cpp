@@ -81,6 +81,7 @@ void parseDriverArguments(int argc, char *argv[],
       std::cout << "      --list               List available devices\n";
       std::cout << "      --device     INDEX   Select device at INDEX\n";
       std::cout << "      --kernelBinary  <pathToKernelBinary.aocx> Specify the path to the percompiled kernel\n";
+      std::cout << "      --writeEdgeDepth  <path/to/edge/depth/output/file> Specify the path for writing the edge depth list\n";
       std::cout << "\n";
       exit(0);
     }
