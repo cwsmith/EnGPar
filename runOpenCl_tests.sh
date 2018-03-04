@@ -40,9 +40,9 @@ for bfsmode in ${bfsModeIdx[@]}; do
   kernel=""
   [ $bfsmode == 2 ] && kernel="--kernel bfsCsrKernel.cl"
   [ $bfsmode == 3 ] && kernel="--kernel bfsScgKernel.cl"
-  [[ $bfsmode == 3 && $isPipelined ]] && kernel="--kernel bfsScgPipelinedKernel.cl"
+  [[ $bfsmode == 3 && $isPipelined == 1 ]] && kernel="--kernel bfsScgPipelinedKernel.cl"
   pipelined=""
-  [ $isPipelined ] && pipelined="--pipelined"
+  [ $isPipelined == 1 ] && pipelined="--pipelined"
   chunkRange=(1)
   [ $bfsmode == 3 ] && chunkRange=${chunkSizes[@]}
   for t in ${tests[@]}; do
