@@ -56,6 +56,7 @@ namespace agi {
         i++;
         l+=g->degree(edge);
         Peers res;
+        printf("DEBUG %d 0.2c0 i %d\n", PCU_Comm_Self(), i);
         g->getResidence(edge,res);
         Peers::iterator itr;
         part_t owner=PCU_Comm_Self();

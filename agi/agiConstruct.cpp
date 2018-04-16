@@ -229,6 +229,16 @@ namespace agi {
       for (lid_t i=0;i<(lid_t)e_weights.size();i++)
         edge_weights[t][i] = e_weights[i];
 
+    { //DEBUG
+      printf("\n");
+      printf("DEBUG rank %d degree_list[%d] = ", PCU_Comm_Self(), t);
+      for(lid_t i=0; i<num_local_verts+1; i++)
+        printf(" %d ", degree_list[t][i]);
+      printf("\n");
+      printf("DEBUG rank %d num_global_verts %d\n", PCU_Comm_Self(), num_global_verts);
+    } //DEBUG
+
+
     if (EnGPar_Is_Log_Open()) {
       EnGPar_End_Function();
     }
@@ -381,6 +391,13 @@ namespace agi {
         num_global_pins[t] = 2*num_global_edges[t];
       }
     }
+
+    { //DEBUG
+      printf("\n");
+      printf("DEBUG rank %d num_global_edges[0] = %d\n", PCU_Comm_Self(), num_global_edges[0]);
+      printf("DEBUG rank %d num_ghost_verts %d\n", PCU_Comm_Self(), num_ghost_verts);
+    } //DEBUG
+
     if (EnGPar_Is_Log_Open()) {
       EnGPar_End_Function();
     }
