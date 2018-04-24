@@ -135,6 +135,7 @@ namespace agi {
                     std::vector<wgt_t>& weights,coord_t*& cs) {
     unsigned int nv;
     PCU_READ_UNSIGNED(f,nv);
+    fprintf(stderr, "%d vertices %u\n", PCU_Comm_Self(), nv);
     for (unsigned int i=0;i<nv;i++) {
       unsigned int gid;
       wgt_t w;
@@ -145,6 +146,7 @@ namespace agi {
     }
     unsigned int hasC;
     PCU_READ_UNSIGNED(f,hasC);
+    fprintf(stderr, "%d coords %u\n", PCU_Comm_Self(), hasC);
     if (hasC==1) {
       cs = new coord_t[nv];
       for (unsigned int i=0;i<nv;i++) {
@@ -159,6 +161,7 @@ namespace agi {
     PCU_READ_UNSIGNED(f,t);
     unsigned int ne;
     PCU_READ_UNSIGNED(f,ne);
+    fprintf(stderr, "%d type %u edges %u\n", PCU_Comm_Self(), t, ne);
     for (unsigned int i=0;i<ne;i++) {
       unsigned int gid;
       wgt_t w;
