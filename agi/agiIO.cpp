@@ -80,6 +80,7 @@ namespace agi {
   void writeGhosts(struct pcu_file* f, const std::unordered_map<gid_t,part_t>& owns) {
     unsigned int numOwners = owns.size();
     PCU_WRITE_UNSIGNED(f,numOwners);
+    fprintf(stderr, "%d numOwners %u\n", PCU_Comm_Self(), numOwners);
     std::unordered_map<gid_t,part_t>::const_iterator itr;
     for (itr=owns.begin();itr!=owns.end();itr++) {
       unsigned int first = itr->first;
