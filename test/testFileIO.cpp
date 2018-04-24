@@ -54,6 +54,7 @@ int main(int argc, char* argv[]) {
   g->saveToFile(argv[3]);
   agi::Ngraph* gLoad = agi::createEmptyGraph();
   gLoad->loadFromFile(argv[3]);
+  agi::checkValidity(gLoad);
   
   testGraphs(g,gLoad);
 

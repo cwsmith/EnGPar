@@ -184,6 +184,7 @@ namespace agi {
   void readGhosts(struct pcu_file* f, std::unordered_map<gid_t,part_t>& owns) {
     unsigned int num_gs;
     PCU_READ_UNSIGNED(f,num_gs);
+    fprintf(stderr, "%d ghosts %u\n", PCU_Comm_Self(), num_gs);
     unsigned int v;
     unsigned int o;
     for (unsigned int i =0;i<num_gs;i++) {
